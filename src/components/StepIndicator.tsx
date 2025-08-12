@@ -12,7 +12,7 @@ interface StepIndicatorProps {
   currentStep: number;
 }
 
-export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
+export const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep }) => {
   return (
     <div className="flex items-center justify-between mb-6 sm:mb-8 overflow-x-auto pb-2">
       {steps.map((step, index) => {
@@ -50,4 +50,4 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
       })}
     </div>
   );
-}
+};

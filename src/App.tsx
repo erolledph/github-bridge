@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { AuthenticationStep } from './components/AuthenticationStep';
 import RepositoryStep from './components/RepositoryStep';
 import FileUploadStep from './components/FileUploadStep';
@@ -73,27 +74,43 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <title>
+          {(() => {
+            switch (state.currentStep) {
+              case 'auth': return 'Authenticate with GitHub - GitHub Bridge';
+              case 'repository': return 'Select Repository - GitHub Bridge';
+              case 'upload': return 'Upload Project Files - GitHub Bridge';
+              case 'operations': return 'Push to GitHub - GitHub Bridge';
+              default: return 'GitHub Bridge';
+            }
+          })()}
+        </title>
+      </Helmet>
+      
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <header className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-gray-900" itemProp="name">
               GitHub Bridge
             </h1>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-gray-600" itemProp="description">
               Upload your Bolt.new projects directly to GitHub repositories
             </p>
           </div>
-        </div>
+        </header>
 
         {/* Step Indicator */}
-        <StepIndicator 
-          steps={steps}
-          currentStep={currentStepIndex}
-        />
+        <nav aria-label="Progress">
+          <StepIndicator 
+            steps={steps}
+            currentStep={currentStepIndex}
+          />
+        </nav>
 
         {/* Main Content */}
-        <div className="mt-8 bg-white rounded-lg shadow-lg p-4 sm:p-6">
+        <main className="mt-8 bg-white rounded-lg shadow-lg p-4 sm:p-6" role="main">
           {state.currentStep === 'auth' && (
             <AuthenticationStep
               onTokenValidated={handleTokenValidated}
@@ -124,7 +141,20 @@ function App() {
               onBack={() => updateState({ currentStep: 'upload' })}
             />
           )}
-        </div>
+        </main>
+        
+        {/* Footer */}
+        <footer className="mt-12 text-center text-sm text-gray-500">
+          <p>
+            Built with ❤️ for developers. 
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 ml-1">
+              Powered by GitHub API
+            </a>
+          </p>
+          <p className="mt-2">
+            Your tokens are never stored and remain secure in your browser session.
+          </p>
+        </footer>
       </div>
     </div>
   );
