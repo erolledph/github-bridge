@@ -1,4 +1,4 @@
 User-agent: *
 +Allow: /
 +
-+Sitemap: https://ephemeral-jalebi-838aca.netlify.app/sitemap.xml
+Sitemap: https://github-bridge.netlify.app/sitemap.xml
