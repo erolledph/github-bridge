@@ -28,7 +28,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
           )}
         </div>
         <h2 className="text-3xl font-bold text-gray-900 mb-3">
-          GitHub Authentication
+          Bolt to GitHub
         </h2>
         <p className="text-lg text-gray-600 max-w-md mx-auto">
           Choose your preferred authentication method
