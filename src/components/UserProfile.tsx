@@ -18,36 +18,36 @@ export const UserProfile: React.FC = () => {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           {user?.photoURL ? (
             <img
               src={user.photoURL}
               alt={user.displayName || 'User'}
-              className="w-10 h-10 rounded-full"
+              className="w-12 h-12 rounded-full border-2 border-green-100"
             />
           ) : (
-            <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-              <User size={20} className="text-gray-600" />
+            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center border-2 border-green-100">
+              <User size={22} className="text-green-600" />
             </div>
           )}
           
           <div>
-            <div className="flex items-center space-x-2">
-              <p className="font-medium text-gray-900">
+            <div className="flex items-center space-x-3">
+              <p className="font-semibold text-gray-900">
                 {user?.displayName || 'GitHub User'}
               </p>
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-2">
                 {authMethod === 'oauth' ? (
-                  <Github size={14} className="text-green-600" />
+                  <Github size={16} className="text-green-600" />
                 ) : (
-                  <Key size={14} className="text-blue-600" />
+                  <Key size={16} className="text-blue-600" />
                 )}
-                <Shield size={14} className="text-gray-400" />
+                <Shield size={16} className="text-gray-400" />
               </div>
             </div>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 mt-1">
               {authMethod === 'oauth' ? 'GitHub OAuth' : 'Manual Token'}
             </p>
           </div>
@@ -55,9 +55,9 @@ export const UserProfile: React.FC = () => {
         
         <button
           onClick={handleLogout}
-          className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="flex items-center px-4 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
         >
-          <LogOut size={16} className="mr-1" />
+          <LogOut size={16} className="mr-2" />
           Logout
         </button>
       </div>

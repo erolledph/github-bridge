@@ -14,19 +14,23 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const [selectedMethod, setSelectedMethod] = useState<AuthMethod>('oauth');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
         <div className="flex justify-center mb-4">
           {selectedMethod === 'oauth' ? (
-            <Github className="h-12 w-12 text-green-600" />
+            <div className="p-4 bg-green-50 rounded-full">
+              <Github className="h-12 w-12 text-green-600" />
+            </div>
           ) : (
-            <Key className="h-12 w-12 text-green-600" />
+            <div className="p-4 bg-green-50 rounded-full">
+              <Key className="h-12 w-12 text-green-600" />
+            </div>
           )}
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">
+        <h2 className="text-3xl font-bold text-gray-900 mb-3">
           GitHub Authentication
         </h2>
-        <p className="mt-2 text-gray-600">
+        <p className="text-lg text-gray-600 max-w-md mx-auto">
           Choose your preferred authentication method
         </p>
       </div>
@@ -36,7 +40,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
         onMethodChange={setSelectedMethod}
       />
 
-      <div className="mt-6">
+      <div className="mt-8">
         {selectedMethod === 'oauth' ? (
           <GitHubLogin onAuthSuccess={onAuthSuccess} />
         ) : (

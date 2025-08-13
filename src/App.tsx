@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { Footer } from './components/Footer';
 import { AuthPage } from './components/auth/AuthPage';
 import { UserProfile } from './components/UserProfile';
 import RepositoryStep from './components/RepositoryStep';
@@ -99,7 +101,8 @@ function App() {
   const currentStepIndex = steps.findIndex(step => step.id === state.currentStep);
 
   return (
-    <div className="min-h-screen bg-white">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-white flex flex-col">
       <Helmet>
         <title>
           {(() => {
@@ -114,15 +117,17 @@ function App() {
         </title>
       </Helmet>
       
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="flex-1">
+          <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Header */}
-        <header className="flex justify-between items-center mb-8">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900" itemProp="name">
+                <h1 className="text-4xl font-bold text-gray-900 mb-2" itemProp="name">
               GitHub Bridge
             </h1>
-            <p className="mt-2 text-gray-600" itemProp="description">
-              Upload your Bolt.new projects directly to GitHub repositories
+                <p className="text-lg text-gray-600 max-w-2xl" itemProp="description">
+                  Seamlessly upload your Bolt.new projects directly to GitHub repositories with secure, 
+                  client-side processing
             </p>
           </div>
           {isAuthenticated && <UserProfile />}
@@ -130,7 +135,7 @@ function App() {
 
         {/* Step Indicator */}
         {isAuthenticated && (
-          <nav aria-label="Progress">
+            <nav aria-label="Progress" className="mb-12">
             <StepIndicator 
               steps={steps}
               currentStep={currentStepIndex}
@@ -139,7 +144,7 @@ function App() {
         )}
 
         {/* Main Content */}
-        <main className="mt-8 bg-white rounded-lg shadow-lg p-4 sm:p-6" role="main">
+            <main className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8" role="main">
           {!isAuthenticated && (
             <AuthPage
               onAuthSuccess={handleAuthSuccess}
@@ -171,21 +176,12 @@ function App() {
             />
           )}
         </main>
+          </div>
+        </div>
         
-        {/* Footer */}
-        <footer className="mt-12 text-center text-sm text-gray-500">
-          <p>
-            Built with ❤️ for developers. 
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700 ml-1">
-              Powered by GitHub API
-            </a>
-          </p>
-          <p className="mt-2">
-            Your authentication is secure and {authMethod === 'manual' ? 'encrypted locally' : 'managed by Firebase'}.
-          </p>
-        </footer>
+        <Footer />
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
 
