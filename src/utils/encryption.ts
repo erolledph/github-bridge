@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js';
 
-const SECRET_KEY = import.meta.env.VITE_ENCRYPTION_SECRET || 'default-secret-key';
+const SECRET_KEY = import.meta.env.VITE_ENCRYPTION_SECRET || 'github-bridge-secure-key-2024';
 
 export const encryptToken = (token: string): string => {
   try {
