@@ -39,7 +39,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       />
       
       {/* Modal */}
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-md mx-4">
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-xl shadow-2xl z-50 w-full max-w-lg mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Account Settings</h2>
@@ -53,54 +53,54 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
         {/* User Info */}
         <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-start space-x-4">
             {user?.photoURL ? (
               <img
                 src={user.photoURL}
                 alt={user.displayName || 'User'}
-                className="w-16 h-16 rounded-full border-2 border-green-100"
+                className="w-20 h-20 rounded-full border-3 border-green-100 flex-shrink-0"
               />
             ) : (
-              <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center border-2 border-green-100">
-                <Shield size={28} className="text-green-600" />
+              <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center border-3 border-green-100 flex-shrink-0">
+                <Shield size={32} className="text-green-600" />
               </div>
             )}
             
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 text-lg">
+              <h3 className="font-semibold text-gray-900 text-xl mb-2">
                 {user?.displayName || 'GitHub User'}
               </h3>
-              <div className="flex items-center space-x-2 mt-1">
+              <div className="flex items-center space-x-2 mb-2">
                 {authMethod === 'oauth' ? (
                   <>
                     <Github size={16} className="text-green-600" />
-                    <span className="text-sm text-gray-600">GitHub OAuth</span>
+                    <span className="text-sm font-medium text-gray-600">GitHub OAuth</span>
                   </>
                 ) : (
                   <>
                     <Key size={16} className="text-blue-600" />
-                    <span className="text-sm text-gray-600">Manual Token</span>
+                    <span className="text-sm font-medium text-gray-600">Manual Token</span>
                   </>
                 )}
               </div>
               {user?.email && (
-                <p className="text-sm text-gray-500 mt-1">{user.email}</p>
+                <p className="text-sm text-gray-500">{user.email}</p>
               )}
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="p-6 space-y-3">
+        <div className="p-6 space-y-4">
           {/* Logout */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center px-4 py-3 text-left hover:bg-red-50 rounded-lg transition-colors group"
+            className="w-full flex items-center px-4 py-4 text-left hover:bg-red-50 rounded-lg transition-colors group"
           >
-            <div className="p-2 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
+            <div className="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors flex-shrink-0">
               <LogOut size={18} className="text-red-600" />
             </div>
-            <div className="ml-4">
+            <div className="ml-4 flex-1">
               <p className="font-medium text-gray-900">Sign Out</p>
               <p className="text-sm text-gray-500">Sign out of your account</p>
             </div>
@@ -110,13 +110,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           {authMethod === 'oauth' && (
             <button
               onClick={handleRevokeAccess}
-              className="w-full flex items-center px-4 py-3 text-left hover:bg-orange-50 rounded-lg transition-colors group"
+              className="w-full flex items-center px-4 py-4 text-left hover:bg-orange-50 rounded-lg transition-colors group"
             >
-              <div className="p-2 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors">
+              <div className="p-3 bg-orange-100 rounded-lg group-hover:bg-orange-200 transition-colors flex-shrink-0">
                 <Shield size={18} className="text-orange-600" />
               </div>
               <div className="ml-4 flex-1">
-                <div className="flex items-center">
+                <div className="flex items-center justify-between">
                   <p className="font-medium text-gray-900">Revoke GitHub Access</p>
                   <ExternalLink size={14} className="ml-2 text-gray-400" />
                 </div>
@@ -128,13 +128,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
           {/* Send Donation */}
           <button
             onClick={handleDonation}
-            className="w-full flex items-center px-4 py-3 text-left hover:bg-blue-50 rounded-lg transition-colors group"
+            className="w-full flex items-center px-4 py-4 text-left hover:bg-blue-50 rounded-lg transition-colors group"
           >
-            <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+            <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors flex-shrink-0">
               <Heart size={18} className="text-blue-600" />
             </div>
             <div className="ml-4 flex-1">
-              <div className="flex items-center">
+              <div className="flex items-center justify-between">
                 <p className="font-medium text-gray-900">Support Development</p>
                 <ExternalLink size={14} className="ml-2 text-gray-400" />
               </div>

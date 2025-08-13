@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Key, Github, Shield, ChevronDown } from 'lucide-react';
+import { User } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { UserProfileModal } from './UserProfileModal';
 
@@ -15,9 +15,9 @@ export const UserProfile: React.FC = () => {
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md hover:border-green-300 transition-all duration-200 cursor-pointer group"
+        className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow-md hover:border-green-300 transition-all duration-200 cursor-pointer group"
       >
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-center">
           {user?.photoURL ? (
             <img
               src={user.photoURL}
@@ -29,27 +29,6 @@ export const UserProfile: React.FC = () => {
               <User size={22} className="text-green-600 group-hover:text-green-700 transition-colors" />
             </div>
           )}
-          
-          <div className="flex-1">
-            <div className="flex items-center space-x-3">
-              <p className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors">
-                {user?.displayName || 'GitHub User'}
-              </p>
-              <div className="flex items-center space-x-2">
-                {authMethod === 'oauth' ? (
-                  <Github size={16} className="text-green-600 group-hover:text-green-700 transition-colors" />
-                ) : (
-                  <Key size={16} className="text-blue-600 group-hover:text-blue-700 transition-colors" />
-                )}
-                <Shield size={16} className="text-gray-400 group-hover:text-gray-500 transition-colors" />
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 group-hover:text-gray-700 transition-colors mt-1">
-              {authMethod === 'oauth' ? 'GitHub OAuth' : 'Manual Token'}
-            </p>
-          </div>
-          
-          <ChevronDown size={18} className="text-gray-400 group-hover:text-gray-600 transition-colors ml-2" />
         </div>
       </button>
 
