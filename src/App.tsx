@@ -8,7 +8,7 @@ import RepositoryStep from './components/RepositoryStep';
 import FileUploadStep from './components/FileUploadStep';
 import { GitOperationsStep } from './components/GitOperationsStep';
 import { StepIndicator } from './components/StepIndicator';
-import { GitBranch, Upload, Settings, CheckCircle } from 'lucide-react';
+import { GitBranch, Upload, Settings, CheckCircle, Github } from 'lucide-react';
 import { GitHubService } from './services/GitHubService';
 import { Repository, UploadedFile } from './types';
 import { useAuth } from './hooks/useAuth';
@@ -120,16 +120,12 @@ function App() {
         <div className="flex-1">
           <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Header */}
-            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-12 space-y-4 sm:space-y-0">
-          <div>
-                <h1 className="text-4xl font-bold text-gray-900 mb-2" itemProp="name">
-              GitHub Bridge
-            </h1>
-                <p className="text-lg text-gray-600 max-w-2xl" itemProp="description">
-                  Seamlessly upload your Bolt.new projects directly to GitHub repositories with secure, 
-                  client-side processing
-            </p>
-          </div>
+            <header className="flex justify-between items-center mb-12">
+              <div className="flex items-center">
+                <div className="p-3 bg-green-50 rounded-xl border border-green-100">
+                  <Github className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
           {isAuthenticated && <UserProfile />}
         </header>
 
