@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { AuthenticationStep } from './components/AuthenticationStep';
+import { AuthPage } from './components/auth/AuthPage';
+import { UserProfile } from './components/UserProfile';
 import RepositoryStep from './components/RepositoryStep';
 import FileUploadStep from './components/FileUploadStep';
 import { GitOperationsStep } from './components/GitOperationsStep';
@@ -8,21 +9,22 @@ import { StepIndicator } from './components/StepIndicator';
 import { GitBranch, Upload, Settings, CheckCircle } from 'lucide-react';
 import { GitHubService } from './services/GitHubService';
 import { Repository, UploadedFile } from './types';
+import { useAuth } from './hooks/useAuth';
+import { LoadingSpinner } from './components/LoadingSpinner';
 
 type Step = 'auth' | 'repository' | 'upload' | 'operations';
 
 interface AppState {
   currentStep: Step;
-  token: string;
   selectedRepository: Repository | null;
   uploadedFile: UploadedFile | null;
   githubService: GitHubService | null;
 }
 
 function App() {
+  const { user, token, authMethod, isLoading } = useAuth();
   const [state, setState] = useState<AppState>({
     currentStep: 'auth',
-    token: '',
     selectedRepository: null,
     uploadedFile: null,
     githubService: null,
@@ -32,9 +34,9 @@ function App() {
     setState(prev => ({ ...prev, ...updates }));
   };
 
-  const handleTokenValidated = (token: string, githubService: GitHubService) => {
+  const handleAuthSuccess = (validatedToken: string) => {
+    const githubService = new GitHubService(validatedToken);
     updateState({
-      token,
       githubService,
       currentStep: 'repository'
     });
@@ -62,6 +64,30 @@ function App() {
       uploadedFile: null,
     });
   };
+
+  // Show loading spinner while auth state is being determined
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Determine if user is authenticated
+  const isAuthenticated = (user && authMethod === 'oauth') || (token && authMethod === 'manual');
+
+  // Auto-advance to repository step if authenticated
+  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService) {
+    const githubService = new GitHubService(token!);
+    updateState({
+      githubService,
+      currentStep: 'repository'
+    });
+  }
 
   const steps = [
     { id: 'auth', label: 'Authenticate', icon: Settings },
@@ -99,40 +125,43 @@ function App() {
               Upload your Bolt.new projects directly to GitHub repositories
             </p>
           </div>
+          {isAuthenticated && <UserProfile />}
         </header>
 
         {/* Step Indicator */}
-        <nav aria-label="Progress">
-          <StepIndicator 
-            steps={steps}
-            currentStep={currentStepIndex}
-          />
-        </nav>
+        {isAuthenticated && (
+          <nav aria-label="Progress">
+            <StepIndicator 
+              steps={steps}
+              currentStep={currentStepIndex}
+            />
+          </nav>
+        )}
 
         {/* Main Content */}
         <main className="mt-8 bg-white rounded-lg shadow-lg p-4 sm:p-6" role="main">
-          {state.currentStep === 'auth' && (
-            <AuthenticationStep
-              onTokenValidated={handleTokenValidated}
+          {!isAuthenticated && (
+            <AuthPage
+              onAuthSuccess={handleAuthSuccess}
             />
           )}
 
-          {state.currentStep === 'repository' && state.githubService && (
+          {isAuthenticated && state.currentStep === 'repository' && state.githubService && (
             <RepositoryStep
               githubService={state.githubService}
               onRepositorySelected={handleRepositorySelected}
-              onBack={() => updateState({ currentStep: 'auth' })}
+              onBack={() => updateState({ currentStep: 'repository' })}
             />
           )}
 
-          {state.currentStep === 'upload' && (
+          {isAuthenticated && state.currentStep === 'upload' && (
             <FileUploadStep
               onFileUploaded={handleFileUploaded}
               onBack={() => updateState({ currentStep: 'repository' })}
             />
           )}
 
-          {state.currentStep === 'operations' && state.githubService && state.selectedRepository && state.uploadedFile && (
+          {isAuthenticated && state.currentStep === 'operations' && state.githubService && state.selectedRepository && state.uploadedFile && (
             <GitOperationsStep
               githubService={state.githubService}
               repository={state.selectedRepository}
@@ -152,7 +181,7 @@ function App() {
             </a>
           </p>
           <p className="mt-2">
-            Your tokens are never stored and remain secure in your browser session.
+            Your authentication is secure and {authMethod === 'manual' ? 'encrypted locally' : 'managed by Firebase'}.
           </p>
         </footer>
       </div>
