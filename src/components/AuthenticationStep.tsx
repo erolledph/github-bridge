@@ -1,17 +1,53 @@
-import React, { useState } from 'react';
-import { Key, ExternalLink, AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Key, ExternalLink, AlertCircle, CheckCircle, Loader, Trash2 } from 'lucide-react';
 import { GitHubService } from '../services/GitHubService';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface AuthenticationStepProps {
   onTokenValidated: (token: string, githubService: GitHubService) => void;
 }
 
 export function AuthenticationStep({ onTokenValidated }: AuthenticationStepProps) {
-  const [token, setToken] = useState('');
+  const [storedToken, setStoredToken, removeStoredToken] = useLocalStorage<string>('github_token', '');
+  const [token, setToken] = useState(storedToken);
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showToken, setShowToken] = useState(false);
+  const [hasStoredToken, setHasStoredToken] = useState(false);
 
+  useEffect(() => {
+    // Check if we have a stored token and auto-validate it
+    if (storedToken && storedToken.trim()) {
+      setHasStoredToken(true);
+      setToken(storedToken);
+      // Auto-validate the stored token
+      validateStoredToken(storedToken);
+    }
+  }, [storedToken]);
+
+  const validateStoredToken = async (tokenToValidate: string) => {
+    setIsValidating(true);
+    setError(null);
+
+    try {
+      const githubService = new GitHubService(tokenToValidate);
+      const validation = await githubService.validateToken();
+
+      if (validation.valid && validation.username) {
+        onTokenValidated(tokenToValidate, githubService);
+      } else {
+        // Token is invalid, remove it from storage
+        removeStoredToken();
+        setHasStoredToken(false);
+        setError('Stored token is invalid or has insufficient permissions. Please enter a new token.');
+      }
+    } catch (err) {
+      // Token validation failed, but don't remove it yet - might be network issue
+      setError('Failed to validate stored token. Please check your internet connection or enter a new token.');
+    } finally {
+      setIsValidating(false);
+    }
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token.trim()) {
@@ -27,6 +63,9 @@ export function AuthenticationStep({ onTokenValidated }: AuthenticationStepProps
       const validation = await githubService.validateToken();
 
       if (validation.valid && validation.username) {
+        // Store the valid token
+        setStoredToken(token.trim());
+        setHasStoredToken(true);
         onTokenValidated(token.trim(), githubService);
       } else {
         setError('Invalid token or insufficient permissions. Please check your token and ensure it has the required scopes.');
@@ -38,6 +77,12 @@ export function AuthenticationStep({ onTokenValidated }: AuthenticationStepProps
     }
   };
 
+  const handleClearToken = () => {
+    removeStoredToken();
+    setToken('');
+    setHasStoredToken(false);
+    setError(null);
+  };
   const requiredScopes = ['repo', 'user:email'];
   const tokenUrl = `https://github.com/settings/tokens/new?scopes=${requiredScopes.join(',')}`;
 
@@ -49,9 +94,31 @@ export function AuthenticationStep({ onTokenValidated }: AuthenticationStepProps
           GitHub Authentication
         </h2>
         <p className="mt-2 text-gray-600">
-          Enter your GitHub Personal Access Token to get started
+          {hasStoredToken 
+            ? 'Validating your stored GitHub token...' 
+            : 'Enter your GitHub Personal Access Token to get started'}
         </p>
       </div>
+
+      {hasStoredToken && !isValidating && !error && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <p className="ml-2 text-sm text-green-800">
+                Using stored GitHub token
+              </p>
+            </div>
+            <button
+              onClick={handleClearToken}
+              className="text-green-600 hover:text-green-700 text-sm flex items-center"
+            >
+              <Trash2 size={14} className="mr-1" />
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
         <div className="flex items-start">
@@ -70,7 +137,8 @@ export function AuthenticationStep({ onTokenValidated }: AuthenticationStepProps
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {(!hasStoredToken || error) && (
+        <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium mb-2 text-gray-700">
             GitHub Personal Access Token
@@ -94,17 +162,6 @@ export function AuthenticationStep({ onTokenValidated }: AuthenticationStepProps
             </button>
           </div>
         </div>
-
-        {error && (
-          <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
-            <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-gray-600" />
-              <p className="ml-2 text-sm text-gray-800">
-                {error}
-              </p>
-            </div>
-          </div>
-        )}
 
         <div className="flex flex-col sm:flex-row gap-3">
           <button
@@ -136,9 +193,32 @@ export function AuthenticationStep({ onTokenValidated }: AuthenticationStepProps
           </a>
         </div>
       </form>
+      )}
+
+      {error && (
+        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-gray-600" />
+              <p className="ml-2 text-sm text-gray-800">
+                {error}
+              </p>
+            </div>
+            {hasStoredToken && (
+              <button
+                onClick={handleClearToken}
+                className="text-red-600 hover:text-red-700 text-sm flex items-center"
+              >
+                <Trash2 size={14} className="mr-1" />
+                Clear Token
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="text-xs text-gray-500 text-center space-y-1">
-        <p>Your token will be used only for this session and is not stored anywhere.</p>
+        <p>Your token is stored locally in your browser for convenience and is never sent to our servers.</p>
         <p>For enhanced security, consider using fine-grained personal access tokens.</p>
       </div>
     </div>
