@@ -8,7 +8,7 @@ import RepositoryStep from './components/RepositoryStep';
 import FileUploadStep from './components/FileUploadStep';
 import { GitOperationsStep } from './components/GitOperationsStep';
 import { StepIndicator } from './components/StepIndicator';
-import { GitBranch, Upload, Settings, CheckCircle, Github } from 'lucide-react';
+import { GitBranch, Upload, Settings, CheckCircle } from 'lucide-react';
 import { GitHubService } from './services/GitHubService';
 import { Repository, UploadedFile } from './types';
 import { useAuth } from './hooks/useAuth';
@@ -123,7 +123,11 @@ function App() {
             <header className="flex justify-between items-center mb-12">
               <div className="flex items-center">
                 <div className="p-3 bg-green-50 rounded-xl border border-green-100">
-                  <Github className="h-8 w-8 text-green-600" />
+                  <img 
+                    src="/favicon.svg" 
+                    alt="GitHub Bridge Logo" 
+                    className="h-8 w-8"
+                  />
                 </div>
               </div>
           {isAuthenticated && <UserProfile />}
