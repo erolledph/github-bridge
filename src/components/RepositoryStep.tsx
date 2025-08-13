@@ -28,7 +28,12 @@ export default function RepositoryStep({
   const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadRepositories();
+    // Add a small delay to ensure GitHub service is properly initialized
+    const timer = setTimeout(() => {
+      loadRepositories();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {

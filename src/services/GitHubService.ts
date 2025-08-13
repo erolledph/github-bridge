@@ -59,12 +59,30 @@ export class GitHubService {
 
   async getRepositories(): Promise<Repository[]> {
     try {
-      const { data } = await this.octokit.rest.repos.listForAuthenticatedUser({
-        sort: 'updated',
-        per_page: 100,
-      });
+      // Add retry logic for better reliability
+      let retries = 3;
+      let lastError;
       
-      return data as Repository[];
+      while (retries > 0) {
+        try {
+          const { data } = await this.octokit.rest.repos.listForAuthenticatedUser({
+            sort: 'updated',
+            per_page: 100,
+          });
+          
+          return data as Repository[];
+        } catch (error) {
+          lastError = error;
+          retries--;
+          
+          if (retries > 0) {
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+      }
+      
+      throw lastError;
     } catch (error) {
       console.error('Failed to fetch repositories:', error);
       throw new Error('Failed to fetch repositories');

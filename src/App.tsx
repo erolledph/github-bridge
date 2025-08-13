@@ -83,7 +83,7 @@ function App() {
   const isAuthenticated = (user && authMethod === 'oauth') || (token && authMethod === 'manual');
 
   // Auto-advance to repository step if authenticated
-  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService) {
+  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService && token) {
     const githubService = new GitHubService(token!);
     updateState({
       githubService,
