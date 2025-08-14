@@ -34,6 +34,7 @@ export function GitOperationsStep({
   const [showNewFiles, setShowNewFiles] = useState(false);
   const [showModifiedFiles, setShowModifiedFiles] = useState(false);
   const [showUnchangedFiles, setShowUnchangedFiles] = useState(false);
+  const [selectedFilePaths, setSelectedFilePaths] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setCommitMessage(`Upload project from Bolt.new: ${uploadedFile.name.replace('.zip', '')}`);
@@ -41,6 +42,20 @@ export function GitOperationsStep({
     compareFiles();
   }, []);
 
+  // Initialize selected files when file comparison is complete
+  useEffect(() => {
+    if (fileComparison) {
+      const allFilePaths = new Set<string>();
+      
+      // Add all file paths to the selection by default
+      fileComparison.newFiles.forEach(file => allFilePaths.add(file.path));
+      fileComparison.modifiedFiles.forEach(file => allFilePaths.add(file.path));
+      fileComparison.unchangedFiles.forEach(file => allFilePaths.add(file.path));
+      
+      setSelectedFilePaths(allFilePaths);
+    }
+  }, [fileComparison]);
+  
   const loadBranches = async () => {
     try {
       const branchList = await githubService.getBranches(repository.owner.login, repository.name);
@@ -79,9 +94,40 @@ export function GitOperationsStep({
     compareFiles();
   };
 
+  const handleFileSelectionChange = (filePath: string, isSelected: boolean) => {
+    setSelectedFilePaths(prev => {
+      const newSet = new Set(prev);
+      if (isSelected) {
+        newSet.add(filePath);
+      } else {
+        newSet.delete(filePath);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = (fileList: FileEntry[], isSelected: boolean) => {
+    setSelectedFilePaths(prev => {
+      const newSet = new Set(prev);
+      fileList.forEach(file => {
+        if (isSelected) {
+          newSet.add(file.path);
+        } else {
+          newSet.delete(file.path);
+        }
+      });
+      return newSet;
+    });
+  };
+  
   const handleUpload = async () => {
     if (!commitMessage.trim()) {
       setError('Please enter a commit message');
+      return;
+    }
+
+    if (selectedFilePaths.size === 0) {
+      setError('Please select at least one file to upload');
       return;
     }
 
@@ -90,6 +136,11 @@ export function GitOperationsStep({
     setUploadProgress(0);
 
     try {
+      // Filter files to only include selected ones
+      const selectedFiles = uploadedFile.extractedFiles.filter(file => 
+        selectedFilePaths.has(file.path)
+      );
+
       const commitInfo: CommitInfo = {
         message: commitMessage.trim(),
         branch: selectedBranch,
@@ -98,7 +149,7 @@ export function GitOperationsStep({
 
       await githubService.uploadFiles(
         repository,
-        uploadedFile.extractedFiles,
+        selectedFiles,
         commitInfo,
         (progress) => setUploadProgress(progress)
       );
@@ -267,19 +318,34 @@ export function GitOperationsStep({
           </h3>
           
           {/* No Changes Detected */}
-          {fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 ? (
+          {fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 && fileComparison.unchangedFiles.length === 0 ? (
+            <div className="text-center py-8">
+              <CheckCircle className="mx-auto h-16 w-16 text-gray-500 mb-4" />
+              <h4 className="text-xl font-bold text-gray-900 mb-3">
+                No Files Found
+              </h4>
+              <p className="text-gray-600 mb-6 text-lg">
+                No files were extracted from the uploaded ZIP file.
+              </p>
+            </div>
+          ) : fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 ? (
             <div className="text-center py-8">
               <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
               <h4 className="text-xl font-bold text-gray-900 mb-3">
-                No Changes Detected
+                No New or Modified Files
               </h4>
               <p className="text-gray-600 mb-6 text-lg">
-                All files are identical to the target branch. No commit is needed.
+                All files are identical to the target branch.
               </p>
               {fileComparison.unchangedFiles.length > 0 && (
-                <p className="text-gray-500 font-medium">
-                  {fileComparison.unchangedFiles.length} file{fileComparison.unchangedFiles.length !== 1 ? 's' : ''} checked
-                </p>
+                <div className="space-y-4">
+                  <p className="text-gray-500 font-medium">
+                    {fileComparison.unchangedFiles.length} unchanged file{fileComparison.unchangedFiles.length !== 1 ? 's' : ''} available
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    You can still select unchanged files to include in the commit if needed.
+                  </p>
+                </div>
               )}
             </div>
           ) : (
@@ -287,21 +353,48 @@ export function GitOperationsStep({
             {/* New Files */}
             {fileComparison.newFiles.length > 0 && (
               <div>
-                <button
-                  onClick={() => setShowNewFiles(!showNewFiles)}
-                  className="flex items-center w-full text-left p-3 rounded-lg hover:bg-gray-100 transition-colors text-green-600"
-                >
-                  {showNewFiles ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                  <Plus size={18} className="ml-2 mr-3" />
-                  <span className="font-bold">
-                    {fileComparison.newFiles.length} new file{fileComparison.newFiles.length !== 1 ? 's' : ''}
-                  </span>
-                </button>
+                <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button
+                    onClick={() => setShowNewFiles(!showNewFiles)}
+                    className="flex items-center text-green-600"
+                  >
+                    {showNewFiles ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    <Plus size={18} className="ml-2 mr-3" />
+                    <span className="font-bold">
+                      {fileComparison.newFiles.length} new file{fileComparison.newFiles.length !== 1 ? 's' : ''}
+                    </span>
+                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleSelectAll(fileComparison.newFiles, true)}
+                      className="text-xs text-green-600 hover:text-green-700 font-medium"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      onClick={() => handleSelectAll(fileComparison.newFiles, false)}
+                      className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
                 {showNewFiles && (
-                  <div className="ml-8 space-y-2">
+                  <div className="ml-8 space-y-3">
                     {fileComparison.newFiles.map((file, index) => (
-                      <div key={index} className="font-mono text-gray-700">
-                        + {file.path}
+                      <div key={index} className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id={`new-${index}`}
+                          checked={selectedFilePaths.has(file.path)}
+                          onChange={(e) => handleFileSelectionChange(file.path, e.target.checked)}
+                          className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                          disabled={isUploading}
+                        />
+                        <label htmlFor={`new-${index}`} className="font-mono text-gray-700 cursor-pointer flex-1">
+                          + {file.path}
+                        </label>
                       </div>
                     ))}
                   </div>
@@ -312,21 +405,48 @@ export function GitOperationsStep({
             {/* Modified Files */}
             {fileComparison.modifiedFiles.length > 0 && (
               <div>
-                <button
-                  onClick={() => setShowModifiedFiles(!showModifiedFiles)}
-                  className="flex items-center w-full text-left p-2 rounded hover:bg-gray-100 transition-colors text-yellow-600 hover:bg-gray-100"
-                >
-                  {showModifiedFiles ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                  <Edit size={16} className="ml-1 mr-2" />
-                  <span className="font-medium">
-                    {fileComparison.modifiedFiles.length} modified file{fileComparison.modifiedFiles.length !== 1 ? 's' : ''}
-                  </span>
-                </button>
+                <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button
+                    onClick={() => setShowModifiedFiles(!showModifiedFiles)}
+                    className="flex items-center text-yellow-600"
+                  >
+                    {showModifiedFiles ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    <Edit size={18} className="ml-2 mr-3" />
+                    <span className="font-bold">
+                      {fileComparison.modifiedFiles.length} modified file{fileComparison.modifiedFiles.length !== 1 ? 's' : ''}
+                    </span>
+                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleSelectAll(fileComparison.modifiedFiles, true)}
+                      className="text-xs text-yellow-600 hover:text-yellow-700 font-medium"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      onClick={() => handleSelectAll(fileComparison.modifiedFiles, false)}
+                      className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
                 {showModifiedFiles && (
-                  <div className="ml-6 space-y-1">
+                  <div className="ml-8 space-y-3">
                     {fileComparison.modifiedFiles.map((file, index) => (
-                      <div key={index} className="text-sm font-mono text-gray-700">
-                        ~ {file.path}
+                      <div key={index} className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id={`modified-${index}`}
+                          checked={selectedFilePaths.has(file.path)}
+                          onChange={(e) => handleFileSelectionChange(file.path, e.target.checked)}
+                          className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                          disabled={isUploading}
+                        />
+                        <label htmlFor={`modified-${index}`} className="font-mono text-gray-700 cursor-pointer flex-1">
+                          ~ {file.path}
+                        </label>
                       </div>
                     ))}
                   </div>
@@ -337,21 +457,48 @@ export function GitOperationsStep({
             {/* Unchanged Files */}
             {fileComparison.unchangedFiles.length > 0 && (
               <div>
-                <button
-                  onClick={() => setShowUnchangedFiles(!showUnchangedFiles)}
-                  className="flex items-center w-full text-left p-2 rounded hover:bg-gray-100 transition-colors text-gray-500 hover:bg-gray-100"
-                >
-                  {showUnchangedFiles ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                  <FileCheck size={16} className="ml-1 mr-2" />
-                  <span className="font-medium">
-                    {fileComparison.unchangedFiles.length} unchanged file{fileComparison.unchangedFiles.length !== 1 ? 's' : ''}
-                  </span>
-                </button>
+                <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button
+                    onClick={() => setShowUnchangedFiles(!showUnchangedFiles)}
+                    className="flex items-center text-gray-500"
+                  >
+                    {showUnchangedFiles ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    <FileCheck size={18} className="ml-2 mr-3" />
+                    <span className="font-bold">
+                      {fileComparison.unchangedFiles.length} unchanged file{fileComparison.unchangedFiles.length !== 1 ? 's' : ''}
+                    </span>
+                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleSelectAll(fileComparison.unchangedFiles, true)}
+                      className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      onClick={() => handleSelectAll(fileComparison.unchangedFiles, false)}
+                      className="text-xs text-gray-400 hover:text-gray-600 font-medium"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
                 {showUnchangedFiles && (
-                  <div className="ml-6 space-y-1">
+                  <div className="ml-8 space-y-3">
                     {fileComparison.unchangedFiles.map((file, index) => (
-                      <div key={index} className="text-sm font-mono text-gray-600">
-                        = {file.path}
+                      <div key={index} className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id={`unchanged-${index}`}
+                          checked={selectedFilePaths.has(file.path)}
+                          onChange={(e) => handleFileSelectionChange(file.path, e.target.checked)}
+                          className="rounded border-gray-300 text-gray-600 focus:ring-gray-500"
+                          disabled={isUploading}
+                        />
+                        <label htmlFor={`unchanged-${index}`} className="font-mono text-gray-600 cursor-pointer flex-1">
+                          = {file.path}
+                        </label>
                       </div>
                     ))}
                   </div>
@@ -405,7 +552,7 @@ export function GitOperationsStep({
         </button>
         <button
           onClick={handleUpload}
-          disabled={isUploading || !commitMessage.trim() || (fileComparison && fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0)}
+          disabled={isUploading || !commitMessage.trim() || selectedFilePaths.size === 0}
           className="btn-primary"
         >
           {isUploading ? (
@@ -416,9 +563,9 @@ export function GitOperationsStep({
           ) : (
             <>
               <Send className="h-5 w-5 mr-3" />
-              {fileComparison && fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 
-                ? 'No Changes to Push' 
-                : 'Push to Repository'}
+              {selectedFilePaths.size === 0 
+                ? 'No Files Selected' 
+                : `Push ${selectedFilePaths.size} File${selectedFilePaths.size !== 1 ? 's' : ''} to Repository`}
             </>
           )}
         </button>

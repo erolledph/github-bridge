@@ -1,2 +1,2 @@
 # github-bridge
-bolt to github....
+bolt to github
