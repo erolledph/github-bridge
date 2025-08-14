@@ -39,7 +39,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
       />
       
       {/* Modal */}
-      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-lg mx-4">
+      <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-md mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-8 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">Account Settings</h2>

@@ -196,12 +196,12 @@ export function GitOperationsStep({
         <p className="text-xl text-gray-600 mb-8">
           Your project has been successfully uploaded to {repository.full_name}
         </p>
-        <div className="space-x-6">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
           <a
             href={`${repository.html_url}/tree/${selectedBranch}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-primary inline-flex"
+            className="btn-primary"
           >
             View on GitHub
           </a>
