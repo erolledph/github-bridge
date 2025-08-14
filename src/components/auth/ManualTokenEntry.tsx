@@ -18,21 +18,8 @@ export const ManualTokenEntry: React.FC<ManualTokenEntryProps> = ({ onAuthSucces
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const trimmedToken = token.trim();
-    if (!trimmedToken) {
+    if (!token.trim()) {
       setError('Please enter a GitHub Personal Access Token');
-      return;
-    }
-
-    // Basic token format validation
-    if (!trimmedToken.startsWith('ghp_') && !trimmedToken.startsWith('github_pat_')) {
-      setError('Invalid token format. GitHub tokens should start with "ghp_" or "github_pat_"');
-      return;
-    }
-
-    if (trimmedToken.length < 20) {
-      setError('Token appears to be too short. Please check your token and try again.');
       return;
     }
 
@@ -40,23 +27,16 @@ export const ManualTokenEntry: React.FC<ManualTokenEntryProps> = ({ onAuthSucces
     setError(null);
 
     try {
-      const githubService = new GitHubService(trimmedToken);
+      const githubService = new GitHubService(token.trim());
       const validation = await githubService.validateToken();
 
       if (validation.valid && validation.username) {
-        onAuthSuccess(trimmedToken, 'manual');
+        onAuthSuccess(token.trim(), 'manual');
       } else {
-        setError('Invalid token or insufficient permissions. Please check your token and ensure it has the required scopes (repo, user:email).');
+        setError('Invalid token or insufficient permissions. Please check your token and ensure it has the required scopes.');
       }
     } catch (err) {
-      console.error('Token validation error:', err);
-      if (err instanceof Error && err.message.includes('401')) {
-        setError('Invalid token. Please check your token and try again.');
-      } else if (err instanceof Error && err.message.includes('403')) {
-        setError('Token lacks required permissions. Please ensure it has "repo" and "user:email" scopes.');
-      } else {
-        setError('Failed to validate token. Please check your internet connection and try again.');
-      }
+      setError('Failed to validate token. Please check your internet connection and try again.');
     } finally {
       setIsValidating(false);
     }

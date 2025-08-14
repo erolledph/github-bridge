@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GitBranch, Search, Plus, Lock, Globe, RefreshCw, AlertCircle } from 'lucide-react';
+import { ArrowLeft, GitBranch, Search, Plus, Lock, Globe, RefreshCw, AlertCircle } from 'lucide-react';
 import { GitHubService } from '../services/GitHubService';
 import { Repository } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -7,11 +7,13 @@ import { LoadingSpinner } from './LoadingSpinner';
 interface RepositoryStepProps {
   githubService: GitHubService;
   onRepositorySelected: (repository: Repository) => void;
+  onBack: () => void;
 }
 
 export default function RepositoryStep({
   githubService,
   onRepositorySelected,
+  onBack,
 }: RepositoryStepProps) {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [filteredRepositories, setFilteredRepositories] = useState<Repository[]>([]);
@@ -96,7 +98,7 @@ export default function RepositoryStep({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div>
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Select Repository
@@ -105,6 +107,14 @@ export default function RepositoryStep({
             Choose an existing repository or create a new one
           </p>
         </div>
+        <button
+          onClick={onBack}
+          disabled={isLoading}
+          className="flex items-center px-3 py-2 rounded-lg border transition-colors border-gray-300 text-gray-700 hover:bg-gray-50"
+        >
+          <ArrowLeft size={16} className="mr-2" />
+          Back
+        </button>
       </div>
 
       {/* Search and Create */}

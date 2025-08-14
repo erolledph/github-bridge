@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GitCommit, Send, AlertTriangle, CheckCircle, Settings, Plus, Edit, FileCheck, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, GitCommit, Send, AlertTriangle, CheckCircle, Settings, Plus, Edit, FileCheck, ChevronDown, ChevronRight } from 'lucide-react';
 import { GitHubService } from '../services/GitHubService';
 import { Repository, UploadedFile, CommitInfo, FileComparison } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -9,6 +9,7 @@ interface GitOperationsStepProps {
   repository: Repository;
   uploadedFile: UploadedFile;
   onComplete: () => void;
+  onBack: () => void;
 }
 
 export function GitOperationsStep({
@@ -16,6 +17,7 @@ export function GitOperationsStep({
   repository,
   uploadedFile,
   onComplete,
+  onBack,
 }: GitOperationsStepProps) {
   const [commitMessage, setCommitMessage] = useState('');
   const [selectedBranch, setSelectedBranch] = useState(repository.default_branch);
@@ -143,7 +145,7 @@ export function GitOperationsStep({
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Commit & Push
@@ -152,6 +154,14 @@ export function GitOperationsStep({
             Configure your commit and push to {repository.full_name}
           </p>
         </div>
+        <button
+          onClick={onBack}
+          disabled={isUploading}
+          className="flex items-center px-3 py-2 rounded-lg border transition-colors border-gray-300 text-gray-700 hover:bg-gray-50"
+        >
+          <ArrowLeft size={16} className="mr-2" />
+          Back
+        </button>
       </div>
 
       {/* Repository Info */}

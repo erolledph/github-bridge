@@ -13,22 +13,11 @@ export const encryptToken = (token: string): string => {
 
 export const decryptToken = (encryptedToken: string): string => {
   try {
-    if (!encryptedToken || encryptedToken.trim() === '') {
-      return null;
-    }
-    
     const bytes = CryptoJS.AES.decrypt(encryptedToken, SECRET_KEY);
     const decrypted = bytes.toString(CryptoJS.enc.Utf8);
-    
-    // If decryption results in empty string, it failed
-    if (!decrypted || decrypted.trim() === '') {
-      console.warn('Token decryption resulted in empty string');
-      return null;
-    }
-    
-    return decrypted;
+    return decrypted || encryptedToken; // Fallback if decryption fails
   } catch (error) {
     console.error('Decryption error:', error);
-    return null; // Return null on decryption failure
+    return encryptedToken; // Fallback to encrypted text
   }
 };

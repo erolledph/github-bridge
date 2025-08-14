@@ -7,34 +7,64 @@ import { UserProfile } from './components/UserProfile';
 import RepositoryStep from './components/RepositoryStep';
 import FileUploadStep from './components/FileUploadStep';
 import { GitOperationsStep } from './components/GitOperationsStep';
+import { StepIndicator } from './components/StepIndicator';
+import { GitBranch, Upload, Settings, CheckCircle } from 'lucide-react';
 import { GitHubService } from './services/GitHubService';
 import { Repository, UploadedFile } from './types';
 import { useAuth } from './hooks/useAuth';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
+type Step = 'auth' | 'repository' | 'upload' | 'operations';
+
+interface AppState {
+  currentStep: Step;
+  selectedRepository: Repository | null;
+  uploadedFile: UploadedFile | null;
+  githubService: GitHubService | null;
+}
+
 function App() {
   const { user, token, authMethod, isLoading } = useAuth();
-  const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
-  const [githubService, setGithubService] = useState<GitHubService | null>(null);
+  const [state, setState] = useState<AppState>({
+    currentStep: 'auth',
+    selectedRepository: null,
+    uploadedFile: null,
+    githubService: null,
+  });
+
+  const updateState = (updates: Partial<AppState>) => {
+    setState(prev => ({ ...prev, ...updates }));
+  };
 
   const handleAuthSuccess = (validatedToken: string) => {
-    const service = new GitHubService(validatedToken);
-    setGithubService(service);
+    const githubService = new GitHubService(validatedToken);
+    updateState({
+      githubService,
+      currentStep: 'repository'
+    });
   };
 
   const handleRepositorySelected = (repository: Repository) => {
-    setSelectedRepository(repository);
+    updateState({
+      selectedRepository: repository,
+      currentStep: 'upload'
+    });
   };
 
   const handleFileUploaded = (file: UploadedFile) => {
-    setUploadedFile(file);
+    updateState({
+      uploadedFile: file,
+      currentStep: 'operations'
+    });
   };
 
   const handleOperationComplete = () => {
     // Reset to start over or show success state
-    setSelectedRepository(null);
-    setUploadedFile(null);
+    updateState({
+      currentStep: 'auth',
+      selectedRepository: null,
+      uploadedFile: null,
+    });
   };
 
   // Show loading spinner while auth state is being determined
@@ -53,21 +83,43 @@ function App() {
   const isAuthenticated = (user && authMethod === 'oauth') || (token && authMethod === 'manual');
 
   // Auto-advance to repository step if authenticated
-  if (isAuthenticated && !githubService && token) {
-    const service = new GitHubService(token!);
-    setGithubService(service);
+  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService && token) {
+    const githubService = new GitHubService(token!);
+    updateState({
+      githubService,
+      currentStep: 'repository'
+    });
   }
+
+  const steps = [
+    { id: 'auth', label: 'Authenticate', icon: Settings },
+    { id: 'repository', label: 'Select Repository', icon: GitBranch },
+    { id: 'upload', label: 'Upload Files', icon: Upload },
+    { id: 'operations', label: 'Push Changes', icon: CheckCircle },
+  ];
+
+  const currentStepIndex = steps.findIndex(step => step.id === state.currentStep);
 
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-white flex flex-col">
-        <Helmet>
-          <title>GitHub Bridge - Upload Bolt.new Projects to GitHub</title>
-        </Helmet>
+      <Helmet>
+        <title>
+          {(() => {
+            switch (state.currentStep) {
+              case 'auth': return 'Authenticate with GitHub - GitHub Bridge';
+              case 'repository': return 'Select Repository - GitHub Bridge';
+              case 'upload': return 'Upload Project Files - GitHub Bridge';
+              case 'operations': return 'Push to GitHub - GitHub Bridge';
+              default: return 'GitHub Bridge';
+            }
+          })()}
+        </title>
+      </Helmet>
       
         <div className="flex-1">
           <div className="container mx-auto px-4 py-12 max-w-4xl">
-            {/* Header */}
+        {/* Header */}
             <header className="flex justify-between items-center mb-12">
               <div className="flex items-center">
                 <div className="p-3 bg-green-50 rounded-xl border border-green-100">
@@ -78,49 +130,52 @@ function App() {
                   />
                 </div>
               </div>
-              {isAuthenticated && <UserProfile />}
-            </header>
+          {isAuthenticated && <UserProfile />}
+        </header>
 
-            {/* Main Content */}
+        {/* Step Indicator */}
+        {isAuthenticated && (
+            <nav aria-label="Progress" className="mb-12">
+            <StepIndicator 
+              steps={steps}
+              currentStep={currentStepIndex}
+            />
+          </nav>
+        )}
+
+        {/* Main Content */}
             <main className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8" role="main">
-              {/* Authentication Section */}
-              {!isAuthenticated && (
-                <section>
-                  <AuthPage onAuthSuccess={handleAuthSuccess} />
-                </section>
-              )}
+          {!isAuthenticated && (
+            <AuthPage
+              onAuthSuccess={handleAuthSuccess}
+            />
+          )}
 
-              {/* Repository Selection Section */}
-              {isAuthenticated && githubService && (
-                <section className={selectedRepository ? 'mb-8 pb-8 border-b border-gray-200' : ''}>
-                  <RepositoryStep
-                    githubService={githubService}
-                    onRepositorySelected={handleRepositorySelected}
-                  />
-                </section>
-              )}
+          {isAuthenticated && state.currentStep === 'repository' && state.githubService && (
+            <RepositoryStep
+              githubService={state.githubService}
+              onRepositorySelected={handleRepositorySelected}
+              onBack={() => updateState({ currentStep: 'repository' })}
+            />
+          )}
 
-              {/* File Upload Section */}
-              {isAuthenticated && selectedRepository && (
-                <section className={uploadedFile ? 'mt-8 pt-8 mb-8 pb-8 border-t border-gray-200 border-b' : 'mt-8 pt-8 border-t border-gray-200'}>
-                  <FileUploadStep
-                    onFileUploaded={handleFileUploaded}
-                  />
-                </section>
-              )}
+          {isAuthenticated && state.currentStep === 'upload' && (
+            <FileUploadStep
+              onFileUploaded={handleFileUploaded}
+              onBack={() => updateState({ currentStep: 'repository' })}
+            />
+          )}
 
-              {/* Git Operations Section */}
-              {isAuthenticated && githubService && selectedRepository && uploadedFile && (
-                <section className="mt-8 pt-8 border-t border-gray-200">
-                  <GitOperationsStep
-                    githubService={githubService}
-                    repository={selectedRepository}
-                    uploadedFile={uploadedFile}
-                    onComplete={handleOperationComplete}
-                  />
-                </section>
-              )}
-            </main>
+          {isAuthenticated && state.currentStep === 'operations' && state.githubService && state.selectedRepository && state.uploadedFile && (
+            <GitOperationsStep
+              githubService={state.githubService}
+              repository={state.selectedRepository}
+              uploadedFile={state.uploadedFile}
+              onComplete={handleOperationComplete}
+              onBack={() => updateState({ currentStep: 'upload' })}
+            />
+          )}
+        </main>
           </div>
         </div>
         
