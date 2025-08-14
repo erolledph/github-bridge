@@ -98,23 +98,13 @@ export default function RepositoryStep({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Select Repository
-          </h2>
-          <p className="mt-1 text-gray-600">
-            Choose an existing repository or create a new one
-          </p>
-        </div>
-        <button
-          onClick={onBack}
-          disabled={isLoading}
-          className="flex items-center px-3 py-2 rounded-lg border transition-colors border-gray-300 text-gray-700 hover:bg-gray-50"
-        >
-          <ArrowLeft size={16} className="mr-2" />
-          Back
-        </button>
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900">
+          Select Repository
+        </h2>
+        <p className="mt-1 text-gray-600">
+          Choose an existing repository or create a new one
+        </p>
       </div>
 
       {/* Search and Create */}
@@ -301,6 +291,18 @@ export default function RepositoryStep({
           )}
         </div>
       )}
+
+      {/* Actions */}
+      <div className="flex justify-between">
+        <button
+          onClick={onBack}
+          disabled={isLoading}
+          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Back
+        </button>
+        <div></div>
+      </div>
     </div>
   );
 }

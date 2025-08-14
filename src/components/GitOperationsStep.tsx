@@ -146,7 +146,7 @@ export function GitOperationsStep({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="text-center w-full">
           <h2 className="text-2xl font-bold text-gray-900">
             Commit & Push
           </h2>
@@ -154,14 +154,6 @@ export function GitOperationsStep({
             Configure your commit and push to {repository.full_name}
           </p>
         </div>
-        <button
-          onClick={onBack}
-          disabled={isUploading}
-          className="flex items-center px-3 py-2 rounded-lg border transition-colors border-gray-300 text-gray-700 hover:bg-gray-50"
-        >
-          <ArrowLeft size={16} className="mr-2" />
-          Back
-        </button>
       </div>
 
       {/* Repository Info */}
@@ -397,7 +389,14 @@ export function GitOperationsStep({
       )}
 
       {/* Actions */}
-      <div className="flex justify-end">
+      <div className="flex justify-between">
+        <button
+          onClick={onBack}
+          disabled={isUploading}
+          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Back
+        </button>
         <button
           onClick={handleUpload}
           disabled={isUploading || !commitMessage.trim() || (fileComparison && fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0)}
