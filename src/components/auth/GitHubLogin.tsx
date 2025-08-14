@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Github, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import { signInWithGitHub } from '../../services/firebase';
 import { GitHubService } from '../../services/GitHubService';
+import { useAuth } from '../../hooks/useAuth';
 
 interface GitHubLoginProps {
   onAuthSuccess: (token: string) => void;
@@ -10,6 +11,7 @@ interface GitHubLoginProps {
 export const GitHubLogin: React.FC<GitHubLoginProps> = ({ onAuthSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { setGitHubToken } = useAuth();
 
   const handleGitHubLogin = async () => {
     setIsLoading(true);
@@ -24,6 +26,8 @@ export const GitHubLogin: React.FC<GitHubLoginProps> = ({ onAuthSuccess }) => {
         const validation = await githubService.validateToken();
         
         if (validation.valid) {
+          // Store the GitHub token in local storage
+          setGitHubToken(result.token);
           onAuthSuccess(result.token);
         } else {
           setError('GitHub authentication succeeded but token validation failed. Please try again.');
