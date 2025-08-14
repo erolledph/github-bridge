@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Footer } from './components/Footer';
@@ -24,7 +24,7 @@ interface AppState {
 }
 
 function App() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, githubToken } = useAuth();
   const [state, setState] = useState<AppState>({
     currentStep: 'auth',
     selectedRepository: null,
@@ -35,6 +35,33 @@ function App() {
   const updateState = (updates: Partial<AppState>) => {
     setState(prev => ({ ...prev, ...updates }));
   };
+
+  // Centralized GitHub service initialization based on auth state
+  useEffect(() => {
+    // Only proceed once auth state is fully determined
+    if (isLoading) return;
+
+    if (user && githubToken) {
+      // User is authenticated and has GitHub token - create service and go to repository step
+      const githubService = new GitHubService(githubToken);
+      updateState({
+        githubService,
+        currentStep: 'repository'
+      });
+    } else if (user && !githubToken) {
+      // User is authenticated but no GitHub token - go back to auth step
+      updateState({
+        githubService: null,
+        currentStep: 'auth'
+      });
+    } else {
+      // User is not authenticated - ensure we're on auth step
+      updateState({
+        githubService: null,
+        currentStep: 'auth'
+      });
+    }
+  }, [user, githubToken, isLoading]);
 
   const handleAuthSuccess = (token: string) => {
     const githubService = new GitHubService(token);
@@ -92,58 +119,6 @@ function App() {
 
   // Determine if user is authenticated
   const isAuthenticated = user !== null;
-
-  // Auto-advance to repository step if authenticated but no GitHub service
-  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService) {
-    // Create GitHub service from Firebase auth token
-    const createGitHubService = async () => {
-      try {
-        const token = await user?.getIdToken();
-        if (token) {
-          const githubService = new GitHubService(token);
-          updateState({
-            githubService,
-            currentStep: 'repository'
-          });
-        }
-      } catch (error) {
-        console.error('Failed to create GitHub service:', error);
-        // Stay on auth step if we can't get the token
-      }
-    };
-    
-    createGitHubService();
-  }
-
-  // If we're on repository step but don't have a GitHub service, we need to get one
-  if (isAuthenticated && state.currentStep === 'repository' && !state.githubService && user) {
-    const createGitHubService = async () => {
-      try {
-        // Get the GitHub access token from Firebase auth
-        const credential = await user.getIdTokenResult();
-        const githubToken = credential.claims.github_access_token;
-        
-        if (githubToken) {
-          const githubService = new GitHubService(githubToken);
-          updateState({
-            githubService
-          });
-        } else {
-          // If no GitHub token, redirect back to auth
-          updateState({
-            currentStep: 'auth'
-          });
-        }
-      } catch (error) {
-        console.error('Failed to get GitHub token:', error);
-        updateState({
-          currentStep: 'auth'
-        });
-      }
-    };
-    
-    createGitHubService();
-  }
 
   // Don't render repository step if we don't have a GitHub service
   const shouldShowRepositoryStep = isAuthenticated && 
@@ -253,15 +228,6 @@ function App() {
             />
           )}
 
-          {/* Loading state when we're trying to get GitHub service */}
-          {isAuthenticated && state.currentStep === 'repository' && !state.githubService && (
-            <div className="text-center py-16">
-              <div className="text-center">
-                <LoadingSpinner size="lg" />
-                <p className="mt-6 text-gray-600 font-medium">Setting up GitHub connection...</p>
-              </div>
-            </div>
-          )}
         </main>
           </div>
         </div>

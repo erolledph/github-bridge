@@ -26,7 +26,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
   };
 
   const handleDonation = () => {
-    const paypalUrl = `https://www.paypal.com/paypalme/cedrickvillarin`;
+    const paypalUrl = `https://www.paypal.com/paypalme/erolled`;
     window.open(paypalUrl, '_blank');
   };
 
