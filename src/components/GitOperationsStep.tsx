@@ -36,6 +36,22 @@ export function GitOperationsStep({
   const [showUnchangedFiles, setShowUnchangedFiles] = useState(false);
   const [selectedFilePaths, setSelectedFilePaths] = useState<Set<string>>(new Set());
 
+  // Calculate if there are meaningful changes selected (new or modified files)
+  const hasMeaningfulChangesSelected = React.useMemo(() => {
+    if (!fileComparison || selectedFilePaths.size === 0) {
+      return false;
+    }
+    
+    // Check if any selected files are new or modified
+    const meaningfulFiles = new Set([
+      ...fileComparison.newFiles.map(f => f.path),
+      ...fileComparison.modifiedFiles.map(f => f.path)
+    ]);
+    
+    // Return true if at least one selected file is meaningful (new or modified)
+    return Array.from(selectedFilePaths).some(path => meaningfulFiles.has(path));
+  }, [fileComparison, selectedFilePaths]);
+
   useEffect(() => {
     setCommitMessage(`Upload project from Bolt.new: ${uploadedFile.name.replace('.zip', '')}`);
     loadBranches();
@@ -552,7 +568,7 @@ export function GitOperationsStep({
         </button>
         <button
           onClick={handleUpload}
-          disabled={isUploading || !commitMessage.trim() || selectedFilePaths.size === 0}
+          disabled={isUploading || !commitMessage.trim() || selectedFilePaths.size === 0 || !hasMeaningfulChangesSelected}
           className="btn-primary"
         >
           {isUploading ? (
@@ -560,12 +576,14 @@ export function GitOperationsStep({
               <LoadingSpinner size="sm" />
               <span className="ml-3">Uploading...</span>
             </>
+          ) : selectedFilePaths.size === 0 ? (
+            'No Files Selected'
+          ) : !hasMeaningfulChangesSelected ? (
+            'Nothing to Commit'
           ) : (
             <>
               <Send className="h-5 w-5 mr-3" />
-              {selectedFilePaths.size === 0 
-                ? 'No Files Selected' 
-                : `Push ${selectedFilePaths.size} File${selectedFilePaths.size !== 1 ? 's' : ''} to Repository`}
+              Push {selectedFilePaths.size} File{selectedFilePaths.size !== 1 ? 's' : ''} to Repository
             </>
           )}
         </button>
