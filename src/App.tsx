@@ -94,49 +94,73 @@ function App() {
   const isAuthenticated = user !== null;
 
   // Auto-advance to repository step if authenticated but no GitHub service
-  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService && user?.githubToken) {
+  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService) {
     // Create GitHub service from Firebase auth token
-    const githubService = new GitHubService(user.githubToken);
-    updateState({
-      githubService,
-      currentStep: 'repository'
-    });
+    const createGitHubService = async () => {
+      try {
+        const token = await user?.getIdToken();
+        if (token) {
+          const githubService = new GitHubService(token);
+          updateState({
+            githubService,
+            currentStep: 'repository'
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create GitHub service:', error);
+        // Stay on auth step if we can't get the token
+      }
+    };
+    
+    createGitHubService();
   }
 
-  // If we're on repository step but don't have a GitHub service, check for stored token
-  if (isAuthenticated && state.currentStep === 'repository' && !state.githubService && user?.githubToken) {
-    const githubService = new GitHubService(user.githubToken);
-    updateState({
-      githubService
-    });
-  }
-
-  // If we're authenticated but don't have a GitHub token, redirect to auth
-  if (isAuthenticated && !user?.githubToken && state.currentStep !== 'auth') {
-    updateState({
-      currentStep: 'auth'
-    });
+  // If we're on repository step but don't have a GitHub service, we need to get one
+  if (isAuthenticated && state.currentStep === 'repository' && !state.githubService && user) {
+    const createGitHubService = async () => {
+      try {
+        // Get the GitHub access token from Firebase auth
+        const credential = await user.getIdTokenResult();
+        const githubToken = credential.claims.github_access_token;
+        
+        if (githubToken) {
+          const githubService = new GitHubService(githubToken);
+          updateState({
+            githubService
+          });
+        } else {
+          // If no GitHub token, redirect back to auth
+          updateState({
+            currentStep: 'auth'
+          });
+        }
+      } catch (error) {
+        console.error('Failed to get GitHub token:', error);
+        updateState({
+          currentStep: 'auth'
+        });
+      }
+    };
+    
+    createGitHubService();
   }
 
   // Don't render repository step if we don't have a GitHub service
   const shouldShowRepositoryStep = isAuthenticated && 
     state.currentStep === 'repository' && 
-    state.githubService &&
-    user?.githubToken;
+    state.githubService;
 
   // Don't render upload step if we don't have a selected repository
   const shouldShowUploadStep = isAuthenticated && 
     state.currentStep === 'upload' && 
-    state.selectedRepository &&
-    user?.githubToken;
+    state.selectedRepository;
 
   // Don't render operations step if we don't have all required data
   const shouldShowOperationsStep = isAuthenticated && 
     state.currentStep === 'operations' && 
     state.githubService && 
     state.selectedRepository && 
-    state.uploadedFile &&
-    user?.githubToken;
+    state.uploadedFile;
 
   const steps = [
     { id: 'auth', label: 'Authenticate', icon: Github },
@@ -230,7 +254,7 @@ function App() {
           )}
 
           {/* Loading state when we're trying to get GitHub service */}
-          {isAuthenticated && state.currentStep === 'repository' && !state.githubService && user?.githubToken && (
+          {isAuthenticated && state.currentStep === 'repository' && !state.githubService && (
             <div className="text-center py-16">
               <div className="text-center">
                 <LoadingSpinner size="lg" />

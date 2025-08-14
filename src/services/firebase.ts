@@ -46,6 +46,17 @@ export const signInWithGitHub = async () => {
   }
 };
 
+export const getGitHubToken = async (user: any) => {
+  try {
+    // Try to get the token from the user's auth result
+    const tokenResult = await user.getIdTokenResult();
+    return tokenResult.claims.github_access_token || null;
+  } catch (error) {
+    console.error('Failed to get GitHub token:', error);
+    return null;
+  }
+};
+
 export const signOutUser = async () => {
   try {
     await signOut(auth);

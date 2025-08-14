@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
-import { onAuthStateChange, signOutUser } from '../services/firebase';
-import { useLocalStorage } from './useLocalStorage';
+import { onAuthStateChange, signOutUser, getGitHubToken } from '../services/firebase';
 
 export interface AuthState {
   user: User | null;
@@ -15,17 +14,17 @@ export const useAuth = () => {
     isLoading: true,
     githubToken: null,
   });
-  
-  const [storedGitHubToken, setStoredGitHubToken] = useLocalStorage<string | null>('github_access_token', null);
 
   useEffect(() => {
     // Listen for Firebase auth state changes
-    const unsubscribe = onAuthStateChange((user) => {
+    const unsubscribe = onAuthStateChange(async (user) => {
       if (user) {
+        // Try to get GitHub token
+        const githubToken = await getGitHubToken(user);
         setAuthState(prev => ({
           ...prev,
           user,
-          githubToken: storedGitHubToken,
+          githubToken,
           isLoading: false,
         }));
       } else {
@@ -34,28 +33,15 @@ export const useAuth = () => {
           githubToken: null,
           isLoading: false,
         });
-        // Clear stored token when user logs out
-        setStoredGitHubToken(null);
       }
     });
 
     return () => unsubscribe();
-  }, [storedGitHubToken, setStoredGitHubToken]);
-
-  const setGitHubToken = (token: string | null) => {
-    setStoredGitHubToken(token);
-    setAuthState(prev => ({
-      ...prev,
-      githubToken: token,
-    }));
-  };
+  }, []);
 
   const logout = async () => {
     try {
       await signOutUser();
-      
-      // Clear stored GitHub token
-      setStoredGitHubToken(null);
       
       setAuthState({
         user: null,
@@ -69,7 +55,6 @@ export const useAuth = () => {
 
   return {
     ...authState,
-    setGitHubToken,
     logout,
   };
 };
