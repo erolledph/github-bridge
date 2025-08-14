@@ -61,9 +61,20 @@ function App() {
   const handleOperationComplete = () => {
     // Reset to start over or show success state
     updateState({
-      currentStep: 'auth',
+      currentStep: 'repository',
       selectedRepository: null,
       uploadedFile: null,
+      githubService: state.githubService, // Keep the GitHub service
+    });
+  };
+
+  const handleStartOver = () => {
+    // Complete reset including GitHub service
+    updateState({
+      currentStep: 'repository',
+      selectedRepository: null,
+      uploadedFile: null,
+      githubService: state.githubService, // Keep the GitHub service
     });
   };
 
@@ -175,6 +186,7 @@ function App() {
               repository={state.selectedRepository}
               uploadedFile={state.uploadedFile}
               onComplete={handleOperationComplete}
+              onStartOver={handleStartOver}
               onBack={() => updateState({ currentStep: 'upload' })}
             />
           )}

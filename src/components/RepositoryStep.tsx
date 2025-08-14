@@ -45,12 +45,18 @@ export default function RepositoryStep({
     try {
       const repos = await githubService.getRepositories();
       setRepositories(repos);
+      setFilteredRepositories(repos);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load repositories');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Reload repositories when the component mounts or githubService changes
+  useEffect(() => {
+    loadRepositories();
+  }, [githubService]);
 
   const handleCreateRepository = async (e: React.FormEvent) => {
     e.preventDefault();

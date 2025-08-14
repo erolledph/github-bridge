@@ -9,6 +9,7 @@ interface GitOperationsStepProps {
   repository: Repository;
   uploadedFile: UploadedFile;
   onComplete: () => void;
+  onStartOver: () => void;
   onBack: () => void;
 }
 
@@ -17,6 +18,7 @@ export function GitOperationsStep({
   repository,
   uploadedFile,
   onComplete,
+  onStartOver,
   onBack,
 }: GitOperationsStepProps) {
   const [commitMessage, setCommitMessage] = useState('');
@@ -113,6 +115,10 @@ export function GitOperationsStep({
     onComplete();
   };
 
+  const handleStartOver = () => {
+    onStartOver();
+  };
+
   if (success) {
     return (
       <div className="text-center py-16">
@@ -133,7 +139,7 @@ export function GitOperationsStep({
             View on GitHub
           </a>
           <button
-            onClick={handleComplete}
+            onClick={handleStartOver}
             className="btn-secondary"
           >
             Upload Another Project
