@@ -1,4 +1,4 @@
-# GitHub Bridge - Project Summary
+# GitHub Bridge - Project Summary.
 
 ## Overview
 GitHub Bridge is a production-ready web application that enables developers to seamlessly upload their Bolt.new exported projects directly to GitHub repositories. The application provides a secure, privacy-focused, user-friendly interface for managing the entire workflow from authentication to file deployment.
