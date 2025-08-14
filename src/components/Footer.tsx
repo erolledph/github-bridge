@@ -69,7 +69,6 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="font-bold text-gray-900 mb-4 text-lg">About</h4>
             <ul className="space-y-3 text-gray-600">
-              <li>Free & Open Source</li>
               <li>Client-side Processing</li>
               <li>No Data Collection</li>
               <li>Secure by Design</li>
