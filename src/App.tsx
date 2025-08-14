@@ -167,6 +167,7 @@ function App() {
 
           {isAuthenticated && state.currentStep === 'repository' && state.githubService && (
             <RepositoryStep
+             key={state.currentStep}
               githubService={state.githubService}
               onRepositorySelected={handleRepositorySelected}
               onBack={() => updateState({ currentStep: 'repository' })}

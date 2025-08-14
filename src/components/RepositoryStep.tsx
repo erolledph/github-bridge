@@ -29,7 +29,7 @@ export default function RepositoryStep({
 
   useEffect(() => {
     loadRepositories();
-  }, []);
+  }, [githubService]);
 
   useEffect(() => {
     const filtered = repositories.filter(repo =>
@@ -52,11 +52,6 @@ export default function RepositoryStep({
       setIsLoading(false);
     }
   };
-
-  // Reload repositories when the component mounts or githubService changes
-  useEffect(() => {
-    loadRepositories();
-  }, [githubService]);
 
   const handleCreateRepository = async (e: React.FormEvent) => {
     e.preventDefault();
