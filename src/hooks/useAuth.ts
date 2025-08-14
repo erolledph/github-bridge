@@ -38,15 +38,29 @@ export const useAuth = () => {
         // Check for manual token
         if (encryptedToken && authMethod === 'manual') {
           const decryptedToken = decryptToken(encryptedToken);
-          // Add a small delay to ensure token is properly set
-          setTimeout(() => {
+          
+          if (decryptedToken) {
+            // Add a small delay to ensure token is properly set
+            setTimeout(() => {
+              setAuthState({
+                user: null,
+                token: decryptedToken,
+                isLoading: false,
+                authMethod: 'manual',
+              });
+            }, 50);
+          } else {
+            // Decryption failed, clear stored data
+            console.warn('Failed to decrypt stored token, clearing authentication data');
+            removeEncryptedToken();
+            removeAuthMethod();
             setAuthState({
               user: null,
-              token: decryptedToken,
+              token: null,
               isLoading: false,
-              authMethod: 'manual',
+              authMethod: null,
             });
-          }, 50);
+          }
         } else {
           setAuthState({
             user: null,
@@ -62,7 +76,17 @@ export const useAuth = () => {
   }, [encryptedToken, authMethod]);
 
   const setManualToken = (token: string) => {
+    if (!token || token.trim() === '') {
+      console.error('Cannot set empty token');
+      return;
+    }
+    
     const encrypted = encryptToken(token);
+    if (!encrypted) {
+      console.error('Failed to encrypt token');
+      return;
+    }
+    
     setEncryptedToken(encrypted);
     setAuthMethodStorage('manual');
     setAuthState({
