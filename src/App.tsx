@@ -69,12 +69,12 @@ function App() {
   };
 
   const handleStartOver = () => {
-    // Complete reset including GitHub service
+    // Reset to repository step but keep the GitHub service
     updateState({
       currentStep: 'repository',
       selectedRepository: null,
       uploadedFile: null,
-      githubService: state.githubService, // Keep the GitHub service
+      githubService: state.githubService, // Keep the existing GitHub service
     });
   };
 
@@ -93,13 +93,74 @@ function App() {
   // Determine if user is authenticated
   const isAuthenticated = user !== null;
 
-  // Auto-advance to repository step if authenticated
-  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService && user) {
-    // We'll get the token from Firebase auth when needed
-    updateState({
-      currentStep: 'repository'
-    });
+  // Auto-advance to repository step if authenticated but no GitHub service
+  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService) {
+    // Create GitHub service from Firebase auth token
+    const createGitHubService = async () => {
+      try {
+        const token = await user?.getIdToken();
+        if (token) {
+          const githubService = new GitHubService(token);
+          updateState({
+            githubService,
+            currentStep: 'repository'
+          });
+        }
+      } catch (error) {
+        console.error('Failed to create GitHub service:', error);
+        // Stay on auth step if we can't get the token
+      }
+    };
+    
+    createGitHubService();
   }
+
+  // If we're on repository step but don't have a GitHub service, we need to get one
+  if (isAuthenticated && state.currentStep === 'repository' && !state.githubService && user) {
+    const createGitHubService = async () => {
+      try {
+        // Get the GitHub access token from Firebase auth
+        const credential = await user.getIdTokenResult();
+        const githubToken = credential.claims.github_access_token;
+        
+        if (githubToken) {
+          const githubService = new GitHubService(githubToken);
+          updateState({
+            githubService
+          });
+        } else {
+          // If no GitHub token, redirect back to auth
+          updateState({
+            currentStep: 'auth'
+          });
+        }
+      } catch (error) {
+        console.error('Failed to get GitHub token:', error);
+        updateState({
+          currentStep: 'auth'
+        });
+      }
+    };
+    
+    createGitHubService();
+  }
+
+  // Don't render repository step if we don't have a GitHub service
+  const shouldShowRepositoryStep = isAuthenticated && 
+    state.currentStep === 'repository' && 
+    state.githubService;
+
+  // Don't render upload step if we don't have a selected repository
+  const shouldShowUploadStep = isAuthenticated && 
+    state.currentStep === 'upload' && 
+    state.selectedRepository;
+
+  // Don't render operations step if we don't have all required data
+  const shouldShowOperationsStep = isAuthenticated && 
+    state.currentStep === 'operations' && 
+    state.githubService && 
+    state.selectedRepository && 
+    state.uploadedFile;
 
   const steps = [
     { id: 'auth', label: 'Authenticate', icon: Github },
@@ -165,7 +226,7 @@ function App() {
             />
           )}
 
-          {isAuthenticated && state.currentStep === 'repository' && state.githubService && (
+          {shouldShowRepositoryStep && (
             <RepositoryStep
              key={state.currentStep}
               githubService={state.githubService}
@@ -174,14 +235,14 @@ function App() {
             />
           )}
 
-          {isAuthenticated && state.currentStep === 'upload' && (
+          {shouldShowUploadStep && (
             <FileUploadStep
               onFileUploaded={handleFileUploaded}
               onBack={() => updateState({ currentStep: 'repository' })}
             />
           )}
 
-          {isAuthenticated && state.currentStep === 'operations' && state.githubService && state.selectedRepository && state.uploadedFile && (
+          {shouldShowOperationsStep && (
             <GitOperationsStep
               githubService={state.githubService}
               repository={state.selectedRepository}
@@ -190,6 +251,16 @@ function App() {
               onStartOver={handleStartOver}
               onBack={() => updateState({ currentStep: 'upload' })}
             />
+          )}
+
+          {/* Loading state when we're trying to get GitHub service */}
+          {isAuthenticated && state.currentStep === 'repository' && !state.githubService && (
+            <div className="text-center py-16">
+              <div className="text-center">
+                <LoadingSpinner size="lg" />
+                <p className="mt-6 text-gray-600 font-medium">Setting up GitHub connection...</p>
+              </div>
+            </div>
           )}
         </main>
           </div>

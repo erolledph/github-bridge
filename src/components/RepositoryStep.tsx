@@ -5,7 +5,7 @@ import { Repository } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
 
 interface RepositoryStepProps {
-  githubService: GitHubService;
+  githubService: GitHubService | null;
   onRepositorySelected: (repository: Repository) => void;
   onBack: () => void;
 }
@@ -28,7 +28,12 @@ export default function RepositoryStep({
   const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadRepositories();
+    if (githubService) {
+      loadRepositories();
+    } else {
+      setError('GitHub service not available. Please authenticate again.');
+      setIsLoading(false);
+    }
   }, [githubService]);
 
   useEffect(() => {
@@ -40,6 +45,12 @@ export default function RepositoryStep({
   }, [repositories, searchTerm]);
 
   const loadRepositories = async () => {
+    if (!githubService) {
+      setError('GitHub service not available');
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     try {
@@ -55,6 +66,11 @@ export default function RepositoryStep({
 
   const handleCreateRepository = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!githubService) {
+      setCreateError('GitHub service not available');
+      return;
+    }
+    
     if (!newRepoName.trim()) return;
 
     // Validate repository name
