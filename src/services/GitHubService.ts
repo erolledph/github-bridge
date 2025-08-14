@@ -10,8 +10,10 @@ interface FileComparison {
 export class GitHubService {
   private octokit: Octokit;
   private username: string = '';
+  private token: string;
 
   constructor(token: string) {
+    this.token = token;
     this.octokit = new Octokit({
       auth: token,
     });
@@ -43,14 +45,13 @@ export class GitHubService {
   private async getTokenScopes(): Promise<string[]> {
     try {
       // Make a request to get the token's scopes from headers
-      const response = await fetch('https://api.github.com/user', {
+      const response = await this.octokit.request('GET /user', {
         headers: {
-          'Authorization': `token ${this.octokit.auth}`,
           'Accept': 'application/vnd.github.v3+json',
         },
       });
       
-      const scopes = response.headers.get('x-oauth-scopes');
+      const scopes = response.headers['x-oauth-scopes'];
       return scopes ? scopes.split(', ').map(s => s.trim()) : [];
     } catch {
       return [];

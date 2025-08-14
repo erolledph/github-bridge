@@ -18,8 +18,16 @@ export const ManualTokenEntry: React.FC<ManualTokenEntryProps> = ({ onAuthSucces
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token.trim()) {
+    
+    const trimmedToken = token.trim();
+    if (!trimmedToken) {
       setError('Please enter a GitHub Personal Access Token');
+      return;
+    }
+
+    // Basic token format validation
+    if (!trimmedToken.startsWith('ghp_') && !trimmedToken.startsWith('github_pat_')) {
+      setError('Invalid token format. GitHub tokens should start with "ghp_" or "github_pat_"');
       return;
     }
 
@@ -27,19 +35,22 @@ export const ManualTokenEntry: React.FC<ManualTokenEntryProps> = ({ onAuthSucces
     setError(null);
 
     try {
-      const githubService = new GitHubService(token.trim());
+      console.log('Validating token...'); // Debug log
+      const githubService = new GitHubService(trimmedToken);
       const validation = await githubService.validateToken();
+      console.log('Validation result:', validation); // Debug log
 
       if (validation.valid && validation.username) {
         setIsValidating(false);
-        onAuthSuccess(token.trim(), 'manual');
+        onAuthSuccess(trimmedToken, 'manual');
       } else {
         setIsValidating(false);
-        setError('Invalid token or insufficient permissions. Please check your token and ensure it has the required scopes.');
+        setError(`Invalid token or insufficient permissions. ${validation.scopes ? 'Token scopes: ' + validation.scopes.join(', ') : 'Please ensure your token has repo and user:email scopes.'}`);
       }
     } catch (err) {
+      console.error('Token validation error:', err); // Debug log
       setIsValidating(false);
-      setError('Failed to validate token. Please check your internet connection and try again.');
+      setError(`Failed to validate token: ${err instanceof Error ? err.message : 'Please check your token and try again.'}`);
     }
   };
 
