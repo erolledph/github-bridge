@@ -31,14 +31,15 @@ export const ManualTokenEntry: React.FC<ManualTokenEntryProps> = ({ onAuthSucces
       const validation = await githubService.validateToken();
 
       if (validation.valid && validation.username) {
+        setIsValidating(false);
         onAuthSuccess(token.trim(), 'manual');
       } else {
+        setIsValidating(false);
         setError('Invalid token or insufficient permissions. Please check your token and ensure it has the required scopes.');
       }
     } catch (err) {
-      setError('Failed to validate token. Please check your internet connection and try again.');
-    } finally {
       setIsValidating(false);
+      setError('Failed to validate token. Please check your internet connection and try again.');
     }
   };
 

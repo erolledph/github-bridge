@@ -38,15 +38,12 @@ export const useAuth = () => {
         // Check for manual token
         if (encryptedToken && authMethod === 'manual') {
           const decryptedToken = decryptToken(encryptedToken);
-          // Add a small delay to ensure token is properly set
-          setTimeout(() => {
-            setAuthState({
-              user: null,
-              token: decryptedToken,
-              isLoading: false,
-              authMethod: 'manual',
-            });
-          }, 50);
+          setAuthState({
+            user: null,
+            token: decryptedToken,
+            isLoading: false,
+            authMethod: 'manual',
+          });
         } else {
           setAuthState({
             user: null,
