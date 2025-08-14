@@ -91,7 +91,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <a 
-                  href="https://bolt.new" 
+                  href="https://bolt.new/?rid=oh23xs" 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="text-gray-600 hover:text-green-600 transition-colors font-medium"
