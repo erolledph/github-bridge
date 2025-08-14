@@ -150,6 +150,7 @@ export class GitHubService {
           newFiles: extractedFiles,
           modifiedFiles: [],
           unchangedFiles: [],
+          deletedFiles: [],
         };
       }
 
@@ -169,9 +170,12 @@ export class GitHubService {
         }
       });
 
+      // Create a set of extracted file paths for quick lookup
+      const extractedFilePaths = new Set(extractedFiles.map(file => file.path));
       const newFiles: FileEntry[] = [];
       const modifiedFiles: FileEntry[] = [];
       const unchangedFiles: FileEntry[] = [];
+      const deletedFiles: FileEntry[] = [];
 
       // Compare each extracted file
       for (const file of extractedFiles) {
@@ -182,7 +186,7 @@ export class GitHubService {
           newFiles.push(file);
         } else {
           // File exists, compare content
-          const fileSha = await this.calculateSha1(file.content);
+          const fileSha = await this.calculateSha1(file.content!);
           
           if (fileSha === existingSha) {
             unchangedFiles.push(file);
@@ -192,10 +196,21 @@ export class GitHubService {
         }
       }
 
+      // Find deleted files (exist in repository but not in extracted files)
+      for (const [filePath] of existingFiles) {
+        if (!extractedFilePaths.has(filePath)) {
+          deletedFiles.push({
+            path: filePath,
+            isDirectory: false,
+            // No content for deleted files
+          });
+        }
+      }
       return {
         newFiles,
         modifiedFiles,
         unchangedFiles,
+        deletedFiles,
       };
     } catch (error) {
       console.error('Failed to compare repository files:', error);
@@ -204,13 +219,15 @@ export class GitHubService {
         newFiles: extractedFiles,
         modifiedFiles: [],
         unchangedFiles: [],
+        deletedFiles: [],
       };
     }
   }
 
   async uploadFiles(
     repository: Repository,
-    files: FileEntry[],
+    filesToUpdate: FileEntry[],
+    filesToDelete: FileEntry[],
     commitInfo: CommitInfo,
     onProgress?: (progress: number) => void
   ): Promise<void> {
@@ -249,22 +266,32 @@ export class GitHubService {
 
       onProgress?.(20);
 
-      // Create tree entries for new files
-      const treeEntries = files
+      // Create tree entries for files to update
+      const updateEntries = filesToUpdate
         .filter(file => !file.isDirectory)
         .map(file => ({
           path: file.path,
           mode: '100644' as const,
           type: 'blob' as const,
-          ...(typeof file.content === 'string' 
-            ? { content: file.content }
+          ...(typeof file.content === 'string'
+            ? { content: file.content! }
             : { 
-                content: Buffer.from(file.content).toString('base64'),
+                content: Buffer.from(file.content!).toString('base64'),
                 encoding: 'base64' as const
               }
           ),
         }));
 
+      // Create tree entries for files to delete
+      const deleteEntries = filesToDelete.map(file => ({
+        path: file.path,
+        mode: '100644' as const,
+        type: 'blob' as const,
+        sha: null, // This tells GitHub to delete the file
+      }));
+
+      // Combine all tree entries
+      const treeEntries = [...updateEntries, ...deleteEntries];
       onProgress?.(40);
 
       // Create new tree

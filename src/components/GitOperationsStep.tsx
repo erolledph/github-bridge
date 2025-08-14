@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, GitCommit, Send, AlertTriangle, CheckCircle, Settings, Plus, Edit, FileCheck, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, GitCommit, Send, AlertTriangle, CheckCircle, Settings, Plus, Edit, FileCheck, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { GitHubService } from '../services/GitHubService';
 import { Repository, UploadedFile, CommitInfo, FileComparison } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -34,6 +34,7 @@ export function GitOperationsStep({
   const [showNewFiles, setShowNewFiles] = useState(false);
   const [showModifiedFiles, setShowModifiedFiles] = useState(false);
   const [showUnchangedFiles, setShowUnchangedFiles] = useState(false);
+  const [showDeletedFiles, setShowDeletedFiles] = useState(false);
   const [selectedFilePaths, setSelectedFilePaths] = useState<Set<string>>(new Set());
 
   // Calculate if there are meaningful changes selected (new or modified files)
@@ -42,13 +43,14 @@ export function GitOperationsStep({
       return false;
     }
     
-    // Check if any selected files are new or modified
+    // Check if any selected files are new, modified, or deleted
     const meaningfulFiles = new Set([
       ...fileComparison.newFiles.map(f => f.path),
-      ...fileComparison.modifiedFiles.map(f => f.path)
+      ...fileComparison.modifiedFiles.map(f => f.path),
+      ...fileComparison.deletedFiles.map(f => f.path)
     ]);
     
-    // Return true if at least one selected file is meaningful (new or modified)
+    // Return true if at least one selected file is meaningful (new, modified, or deleted)
     return Array.from(selectedFilePaths).some(path => meaningfulFiles.has(path));
   }, [fileComparison, selectedFilePaths]);
 
@@ -67,6 +69,7 @@ export function GitOperationsStep({
       fileComparison.newFiles.forEach(file => allFilePaths.add(file.path));
       fileComparison.modifiedFiles.forEach(file => allFilePaths.add(file.path));
       fileComparison.unchangedFiles.forEach(file => allFilePaths.add(file.path));
+      fileComparison.deletedFiles.forEach(file => allFilePaths.add(file.path));
       
       setSelectedFilePaths(allFilePaths);
     }
@@ -152,10 +155,15 @@ export function GitOperationsStep({
     setUploadProgress(0);
 
     try {
-      // Filter files to only include selected ones
-      const selectedFiles = uploadedFile.extractedFiles.filter(file => 
+      // Filter files to update (from uploaded ZIP)
+      const filesToUpdate = uploadedFile.extractedFiles.filter(file => 
         selectedFilePaths.has(file.path)
       );
+
+      // Filter files to delete (from comparison results)
+      const filesToDelete = fileComparison?.deletedFiles.filter(file => 
+        selectedFilePaths.has(file.path)
+      ) || [];
 
       const commitInfo: CommitInfo = {
         message: commitMessage.trim(),
@@ -165,7 +173,8 @@ export function GitOperationsStep({
 
       await githubService.uploadFiles(
         repository,
-        selectedFiles,
+        filesToUpdate,
+        filesToDelete,
         commitInfo,
         (progress) => setUploadProgress(progress)
       );
@@ -334,7 +343,7 @@ export function GitOperationsStep({
           </h3>
           
           {/* No Changes Detected */}
-          {fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 && fileComparison.unchangedFiles.length === 0 ? (
+          {fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 && fileComparison.unchangedFiles.length === 0 && fileComparison.deletedFiles.length === 0 ? (
             <div className="text-center py-8">
               <CheckCircle className="mx-auto h-16 w-16 text-gray-500 mb-4" />
               <h4 className="text-xl font-bold text-gray-900 mb-3">
@@ -344,11 +353,11 @@ export function GitOperationsStep({
                 No files were extracted from the uploaded ZIP file.
               </p>
             </div>
-          ) : fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 ? (
+          ) : fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 && fileComparison.deletedFiles.length === 0 ? (
             <div className="text-center py-8">
               <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
               <h4 className="text-xl font-bold text-gray-900 mb-3">
-                No New or Modified Files
+                No New, Modified, or Deleted Files
               </h4>
               <p className="text-gray-600 mb-6 text-lg">
                 All files are identical to the target branch.
@@ -462,6 +471,58 @@ export function GitOperationsStep({
                         />
                         <label htmlFor={`modified-${index}`} className="font-mono text-gray-700 cursor-pointer flex-1">
                           ~ {file.path}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Deleted Files */}
+            {fileComparison.deletedFiles.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button
+                    onClick={() => setShowDeletedFiles(!showDeletedFiles)}
+                    className="flex items-center text-red-600"
+                  >
+                    {showDeletedFiles ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                    <Trash2 size={18} className="ml-2 mr-3" />
+                    <span className="font-bold">
+                      {fileComparison.deletedFiles.length} deleted file{fileComparison.deletedFiles.length !== 1 ? 's' : ''}
+                    </span>
+                  </button>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleSelectAll(fileComparison.deletedFiles, true)}
+                      className="text-xs text-red-600 hover:text-red-700 font-medium"
+                    >
+                      Select All
+                    </button>
+                    <span className="text-gray-300">|</span>
+                    <button
+                      onClick={() => handleSelectAll(fileComparison.deletedFiles, false)}
+                      className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+                {showDeletedFiles && (
+                  <div className="ml-8 space-y-3">
+                    {fileComparison.deletedFiles.map((file, index) => (
+                      <div key={index} className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id={`deleted-${index}`}
+                          checked={selectedFilePaths.has(file.path)}
+                          onChange={(e) => handleFileSelectionChange(file.path, e.target.checked)}
+                          className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                          disabled={isUploading}
+                        />
+                        <label htmlFor={`deleted-${index}`} className="font-mono text-gray-700 cursor-pointer flex-1">
+                          - {file.path}
                         </label>
                       </div>
                     ))}

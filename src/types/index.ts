@@ -22,7 +22,7 @@ export interface UploadedFile {
 
 export interface FileEntry {
   path: string;
-  content: string | Uint8Array;
+  content?: string | Uint8Array;
   isDirectory: boolean;
 }
 
@@ -36,4 +36,5 @@ export interface FileComparison {
   newFiles: FileEntry[];
   modifiedFiles: FileEntry[];
   unchangedFiles: FileEntry[];
+  deletedFiles: FileEntry[];
 }
