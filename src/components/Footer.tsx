@@ -3,52 +3,52 @@ import { Shield, FileText, Github, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="mt-16 border-t border-gray-200 bg-white">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <footer className="mt-20 border-t border-gray-200 bg-white">
+      <div className="container mx-auto px-4 py-12 max-w-5xl">
         {/* Privacy Commitment Section */}
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-          <div className="flex items-center mb-4">
-            <Shield className="h-6 w-6 text-green-600 mr-2" />
-            <h3 className="text-lg font-semibold text-green-800">Your Privacy is Protected</h3>
+        <div className="alert-success mb-12">
+          <div className="flex items-center mb-6">
+            <Shield className="h-7 w-7 text-green-600 mr-3" />
+            <h3 className="text-xl font-bold text-green-800">Your Privacy is Protected</h3>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-start">
-              <div className="w-2 h-2 bg-green-600 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+              <div className="w-3 h-3 bg-green-600 rounded-full mt-2 mr-4 flex-shrink-0"></div>
               <div>
-                <p className="font-medium text-green-800">We don't access your account information</p>
-                <p className="text-green-700 mt-1">Your GitHub credentials stay secure</p>
+                <p className="font-semibold text-green-800 text-base">We don't access your account information</p>
+                <p className="text-green-700 mt-2">Your GitHub credentials stay secure</p>
               </div>
             </div>
             <div className="flex items-start">
-              <div className="w-2 h-2 bg-green-600 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+              <div className="w-3 h-3 bg-green-600 rounded-full mt-2 mr-4 flex-shrink-0"></div>
               <div>
-                <p className="font-medium text-green-800">We don't collect personal data</p>
-                <p className="text-green-700 mt-1">No tracking or data harvesting</p>
+                <p className="font-semibold text-green-800 text-base">We don't collect personal data</p>
+                <p className="text-green-700 mt-2">No tracking or data harvesting</p>
               </div>
             </div>
             <div className="flex items-start">
-              <div className="w-2 h-2 bg-green-600 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+              <div className="w-3 h-3 bg-green-600 rounded-full mt-2 mr-4 flex-shrink-0"></div>
               <div>
-                <p className="font-medium text-green-800">We don't store or steal user data</p>
-                <p className="text-green-700 mt-1">Everything stays in your browser</p>
+                <p className="font-semibold text-green-800 text-base">We don't store or steal user data</p>
+                <p className="text-green-700 mt-2">Everything stays in your browser</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Links and Information */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-12">
           <div>
-            <h4 className="font-semibold text-gray-900 mb-3">Legal</h4>
-            <ul className="space-y-2 text-sm">
+            <h4 className="font-bold text-gray-900 mb-4 text-lg">Legal</h4>
+            <ul className="space-y-3">
               <li>
                 <a 
                   href="/privacy-policy.html" 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-green-600 transition-colors flex items-center"
+                  className="text-gray-600 hover:text-green-600 transition-colors flex items-center font-medium"
                 >
-                  <FileText size={14} className="mr-2" />
+                  <FileText size={16} className="mr-3" />
                   Privacy Policy
                 </a>
               </li>
@@ -57,9 +57,9 @@ export const Footer: React.FC = () => {
                   href="/terms-of-service.html" 
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-green-600 transition-colors flex items-center"
+                  className="text-gray-600 hover:text-green-600 transition-colors flex items-center font-medium"
                 >
-                  <FileText size={14} className="mr-2" />
+                  <FileText size={16} className="mr-3" />
                   Terms of Service
                 </a>
               </li>
@@ -67,8 +67,8 @@ export const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="font-semibold text-gray-900 mb-3">About</h4>
-            <ul className="space-y-2 text-sm text-gray-600">
+            <h4 className="font-bold text-gray-900 mb-4 text-lg">About</h4>
+            <ul className="space-y-3 text-gray-600">
               <li>Free & Open Source</li>
               <li>Client-side Processing</li>
               <li>No Data Collection</li>
@@ -77,16 +77,16 @@ export const Footer: React.FC = () => {
           </div>
 
           <div>
-            <h4 className="font-semibold text-gray-900 mb-3">Resources</h4>
-            <ul className="space-y-2 text-sm">
+            <h4 className="font-bold text-gray-900 mb-4 text-lg">Resources</h4>
+            <ul className="space-y-3">
               <li>
                 <a 
                   href="https://github.com" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-gray-600 hover:text-green-600 transition-colors flex items-center"
+                  className="text-gray-600 hover:text-green-600 transition-colors flex items-center font-medium"
                 >
-                  <Github size={14} className="mr-2" />
+                  <Github size={16} className="mr-3" />
                   GitHub API
                 </a>
               </li>
@@ -95,7 +95,7 @@ export const Footer: React.FC = () => {
                   href="https://bolt.new" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-gray-600 hover:text-green-600 transition-colors"
+                  className="text-gray-600 hover:text-green-600 transition-colors font-medium"
                 >
                   Bolt.new Platform
                 </a>
@@ -105,12 +105,12 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Section */}
-        <div className="border-t border-gray-200 pt-6">
-          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-500">
-            <p className="flex items-center mb-4 md:mb-0">
-              Built with <Heart size={14} className="mx-1 text-red-500" /> for developers
+        <div className="border-t border-gray-200 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center text-gray-500">
+            <p className="flex items-center mb-6 md:mb-0 font-medium">
+              Built with <Heart size={16} className="mx-2 text-red-500" /> for developers
             </p>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6 font-medium">
               <span>Powered by GitHub API</span>
               <span>•</span>
               <span>Secured with Firebase</span>

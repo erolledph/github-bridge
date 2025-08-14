@@ -8,7 +8,7 @@ import RepositoryStep from './components/RepositoryStep';
 import FileUploadStep from './components/FileUploadStep';
 import { GitOperationsStep } from './components/GitOperationsStep';
 import { StepIndicator } from './components/StepIndicator';
-import { GitBranch, Upload, Settings, CheckCircle } from 'lucide-react';
+import { GitBranch, Upload, Github, CheckCircle } from 'lucide-react';
 import { GitHubService } from './services/GitHubService';
 import { Repository, UploadedFile } from './types';
 import { useAuth } from './hooks/useAuth';
@@ -24,7 +24,7 @@ interface AppState {
 }
 
 function App() {
-  const { user, token, authMethod, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [state, setState] = useState<AppState>({
     currentStep: 'auth',
     selectedRepository: null,
@@ -36,8 +36,8 @@ function App() {
     setState(prev => ({ ...prev, ...updates }));
   };
 
-  const handleAuthSuccess = (validatedToken: string) => {
-    const githubService = new GitHubService(validatedToken);
+  const handleAuthSuccess = (token: string) => {
+    const githubService = new GitHubService(token);
     updateState({
       githubService,
       currentStep: 'repository'
@@ -70,29 +70,28 @@ function App() {
   // Show loading spinner while auth state is being determined
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-6 text-gray-600 font-medium">Initializing...</p>
         </div>
       </div>
     );
   }
 
   // Determine if user is authenticated
-  const isAuthenticated = (user && authMethod === 'oauth') || (token && authMethod === 'manual');
+  const isAuthenticated = user !== null;
 
   // Auto-advance to repository step if authenticated
-  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService && token) {
-    const githubService = new GitHubService(token!);
+  if (isAuthenticated && state.currentStep === 'auth' && !state.githubService && user) {
+    // We'll get the token from Firebase auth when needed
     updateState({
-      githubService,
       currentStep: 'repository'
     });
   }
 
   const steps = [
-    { id: 'auth', label: 'Authenticate', icon: Settings },
+    { id: 'auth', label: 'Authenticate', icon: Github },
     { id: 'repository', label: 'Select Repository', icon: GitBranch },
     { id: 'upload', label: 'Upload Files', icon: Upload },
     { id: 'operations', label: 'Push Changes', icon: CheckCircle },
@@ -102,7 +101,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
       <Helmet>
         <title>
           {(() => {
@@ -118,16 +117,20 @@ function App() {
       </Helmet>
       
         <div className="flex-1">
-          <div className="container mx-auto px-4 py-12 max-w-4xl">
+          <div className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Header */}
-            <header className="flex justify-between items-center mb-12">
+            <header className="flex justify-between items-center mb-10">
               <div className="flex items-center">
-                <div className="p-3 bg-green-50 rounded-xl border border-green-100">
+                <div className="p-4 bg-white rounded-2xl border border-green-200 shadow-sm">
                   <img 
                     src="/favicon.svg" 
                     alt="GitHub Bridge Logo" 
-                    className="h-8 w-8"
+                    className="h-10 w-10"
                   />
+                </div>
+                <div className="ml-4">
+                  <h1 className="text-2xl font-bold text-gray-900">GitHub Bridge</h1>
+                  <p className="text-sm text-gray-600">Upload Bolt.new projects to GitHub</p>
                 </div>
               </div>
           {isAuthenticated && <UserProfile />}
@@ -135,7 +138,7 @@ function App() {
 
         {/* Step Indicator */}
         {isAuthenticated && (
-            <nav aria-label="Progress" className="mb-12">
+            <nav aria-label="Progress" className="mb-10">
             <StepIndicator 
               steps={steps}
               currentStep={currentStepIndex}
@@ -144,7 +147,7 @@ function App() {
         )}
 
         {/* Main Content */}
-            <main className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sm:p-8" role="main">
+            <main className="card p-8 sm:p-10" role="main">
           {!isAuthenticated && (
             <AuthPage
               onAuthSuccess={handleAuthSuccess}

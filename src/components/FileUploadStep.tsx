@@ -157,8 +157,8 @@ export default function FileUploadStep({
         <div
           className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
             dragActive
-              ? 'border-green-600 bg-green-50'
-              : 'border-gray-300 hover:border-gray-400'
+              ? 'border-green-500 bg-green-50'
+              : 'border-gray-300 hover:border-green-300 bg-white'
           }`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
@@ -171,11 +171,11 @@ export default function FileUploadStep({
             onChange={handleFileInput}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           />
-          <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-          <p className="text-lg font-medium text-gray-900 mb-2">
+          <Upload className="mx-auto h-16 w-16 text-gray-400 mb-6" />
+          <p className="text-xl font-bold text-gray-900 mb-3">
             Drop your ZIP file here or click to browse
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-gray-500">
             Supports ZIP files exported from Bolt.new
           </p>
         </div>
@@ -183,18 +183,18 @@ export default function FileUploadStep({
 
       {/* Processing State */}
       {isProcessing && (
-        <div className="text-center py-8">
+        <div className="text-center py-12">
           <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Processing ZIP file...</p>
+          <p className="mt-6 text-gray-600 font-medium text-lg">Processing ZIP file...</p>
         </div>
       )}
 
       {/* Error State */}
       {error && (
-        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+        <div className="alert-error">
           <div className="flex items-center">
-            <AlertTriangle className="h-5 w-5 text-gray-600" />
-            <p className="ml-2 text-sm text-gray-800">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <p className="ml-3 text-red-800 font-medium">
               {error}
             </p>
           </div>
@@ -203,32 +203,32 @@ export default function FileUploadStep({
 
       {/* File Preview */}
       {uploadedFile && (
-        <div className="border rounded-lg p-4 border-gray-200 bg-gray-50">
-          <h3 className="font-medium mb-3 text-gray-900">
+        <div className="card p-6 bg-gray-50">
+          <h3 className="font-bold mb-4 text-gray-900 text-lg">
             File Preview
           </h3>
-          <div className="flex items-center space-x-3 mb-4">
-            <FileArchive className="h-8 w-8 text-gray-600" />
+          <div className="flex items-center space-x-4 mb-6">
+            <FileArchive className="h-10 w-10 text-gray-600" />
             <div>
-              <p className="font-medium text-gray-900">
+              <p className="font-bold text-gray-900 text-lg">
                 {uploadedFile.name}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-gray-500 font-medium">
                 {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB • {uploadedFile.extractedFiles.length} files
               </p>
             </div>
           </div>
           
-          <div className="max-h-40 overflow-y-auto">
-            <div className="space-y-1">
+          <div className="max-h-48 overflow-y-auto">
+            <div className="space-y-2">
               {uploadedFile.extractedFiles.slice(0, 10).map((file, index) => (
-                <div key={index} className="flex items-center space-x-2 text-sm text-gray-600">
-                  <File size={14} />
-                  <span className="font-mono">{file.path}</span>
+                <div key={index} className="flex items-center space-x-3 text-gray-600">
+                  <File size={16} />
+                  <span className="font-mono text-sm">{file.path}</span>
                 </div>
               ))}
               {uploadedFile.extractedFiles.length > 10 && (
-                <p className="text-sm text-gray-500 italic">
+                <p className="text-gray-500 italic font-medium">
                   ... and {uploadedFile.extractedFiles.length - 10} more files
                 </p>
               )}
@@ -241,14 +241,14 @@ export default function FileUploadStep({
         <button
           onClick={onBack}
           disabled={isProcessing}
-          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="btn-secondary"
         >
           Back
         </button>
         <button
           onClick={handleContinue}
           disabled={!uploadedFile || isProcessing}
-          className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+          className="btn-primary"
         >
           Continue
         </button>

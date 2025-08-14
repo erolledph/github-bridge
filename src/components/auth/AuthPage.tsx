@@ -1,52 +1,29 @@
 import React, { useState } from 'react';
 import { GitHubLogin } from './GitHubLogin';
-import { ManualTokenEntry } from './ManualTokenEntry';
-import { AuthToggle } from './AuthToggle';
-import { Key, Github } from 'lucide-react';
-
-export type AuthMethod = 'oauth' | 'manual';
+import { Github } from 'lucide-react';
 
 interface AuthPageProps {
-  onAuthSuccess: (token: string, method: AuthMethod) => void;
+  onAuthSuccess: (token: string) => void;
 }
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
-  const [selectedMethod, setSelectedMethod] = useState<AuthMethod>('oauth');
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div className="text-center">
-        <div className="flex justify-center mb-4">
-          {selectedMethod === 'oauth' ? (
-            <div className="p-4 bg-green-50 rounded-full">
-              <Github className="h-12 w-12 text-green-600" />
-            </div>
-          ) : (
-            <div className="p-4 bg-green-50 rounded-full">
-              <Key className="h-12 w-12 text-green-600" />
-            </div>
-          )}
+        <div className="flex justify-center mb-6">
+          <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-2xl shadow-sm">
+            <Github className="h-16 w-16 text-green-600" />
+          </div>
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-3">
-          Bolt to GitHub
+        <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          Welcome to GitHub Bridge
         </h2>
-        <p className="text-lg text-gray-600 max-w-md mx-auto">
-          Choose your preferred authentication method
+        <p className="text-xl text-gray-600 max-w-lg mx-auto leading-relaxed">
+          Seamlessly upload your Bolt.new projects directly to GitHub repositories
         </p>
       </div>
 
-      <AuthToggle
-        selectedMethod={selectedMethod}
-        onMethodChange={setSelectedMethod}
-      />
-
-      <div className="mt-8">
-        {selectedMethod === 'oauth' ? (
-          <GitHubLogin onAuthSuccess={onAuthSuccess} />
-        ) : (
-          <ManualTokenEntry onAuthSuccess={onAuthSuccess} />
-        )}
-      </div>
+      <GitHubLogin onAuthSuccess={onAuthSuccess} />
     </div>
   );
 };

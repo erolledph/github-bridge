@@ -115,26 +115,26 @@ export function GitOperationsStep({
 
   if (success) {
     return (
-      <div className="text-center py-12">
-        <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
-        <h2 className="text-2xl font-bold mb-2 text-gray-900">
+      <div className="text-center py-16">
+        <CheckCircle className="mx-auto h-20 w-20 text-green-500 mb-6" />
+        <h2 className="text-3xl font-bold mb-4 text-gray-900">
           Upload Successful!
         </h2>
-        <p className="text-gray-600 mb-6">
+        <p className="text-xl text-gray-600 mb-8">
           Your project has been successfully uploaded to {repository.full_name}
         </p>
-        <div className="space-x-4">
+        <div className="space-x-6">
           <a
             href={`${repository.html_url}/tree/${selectedBranch}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors font-medium inline-block"
+            className="btn-primary inline-flex"
           >
             View on GitHub
           </a>
           <button
             onClick={handleComplete}
-            className="text-gray-700 hover:bg-gray-50 border border-gray-300 px-6 py-2 rounded-lg transition-colors font-medium"
+            className="btn-secondary"
           >
             Upload Another Project
           </button>
@@ -144,31 +144,31 @@ export function GitOperationsStep({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div className="text-center w-full">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-3xl font-bold text-gray-900">
             Commit & Push
           </h2>
-          <p className="mt-1 text-gray-600">
+          <p className="mt-2 text-xl text-gray-600">
             Configure your commit and push to {repository.full_name}
           </p>
         </div>
       </div>
 
       {/* Repository Info */}
-      <div className="border rounded-lg p-4 border-gray-200 bg-gray-50">
-        <div className="flex items-center space-x-4">
+      <div className="card p-6 bg-gray-50">
+        <div className="flex items-center space-x-5">
           <img
             src={repository.owner.avatar_url}
             alt={repository.owner.login}
-            className="w-8 h-8 rounded-full"
+            className="w-12 h-12 rounded-full border-2 border-gray-200"
           />
           <div>
-            <p className="font-medium text-gray-900">
+            <p className="font-bold text-gray-900 text-lg">
               {repository.full_name}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-gray-600 font-medium">
               {uploadedFile.extractedFiles.length} files to upload
             </p>
           </div>
@@ -176,33 +176,33 @@ export function GitOperationsStep({
       </div>
 
       {/* Commit Configuration */}
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium mb-2 text-gray-700">
+          <label className="block font-bold mb-3 text-gray-700 text-lg">
             Commit Message
           </label>
           <textarea
             value={commitMessage}
             onChange={(e) => setCommitMessage(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-none bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+            className="input-field resize-none"
             placeholder="Describe your changes..."
             disabled={isUploading}
           />
-          <p className="text-xs mt-1 text-gray-500">
+          <p className="text-sm mt-2 text-gray-500 font-medium">
             {commitMessage.length}/72 characters (recommended)
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium mb-2 text-gray-700">
+            <label className="block font-bold mb-3 text-gray-700 text-lg">
               Target Branch
             </label>
             <select
               value={selectedBranch}
               onChange={(e) => handleBranchChange(e.target.value)}
-              className="w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors bg-white border-gray-300 text-gray-900"
+              className="input-field"
             >
               {branches.map((branch) => (
                 <option key={branch} value={branch}>
@@ -212,7 +212,7 @@ export function GitOperationsStep({
             </select>
           </div>
 
-          <div className="flex items-center space-x-2 pt-6 sm:pt-8">
+          <div className="flex items-center space-x-3 pt-8 sm:pt-12">
             <input
               id="clearExisting"
               type="checkbox"
@@ -221,21 +221,21 @@ export function GitOperationsStep({
               className="rounded border-gray-300 text-green-600 focus:ring-green-500"
               disabled={isUploading}
             />
-            <label htmlFor="clearExisting" className="text-sm text-gray-700">
+            <label htmlFor="clearExisting" className="text-gray-700 font-medium">
               Clear existing files
             </label>
           </div>
         </div>
 
         {clearExisting && (
-          <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+          <div className="alert-warning">
             <div className="flex items-start">
-              <AlertTriangle className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-800">
+              <AlertTriangle className="h-6 w-6 text-amber-600 mt-1 flex-shrink-0" />
+              <div className="ml-4">
+                <p className="font-bold text-amber-800 text-lg">
                   Warning: This will remove all existing files
                 </p>
-                <p className="text-sm mt-1 text-gray-700">
+                <p className="mt-2 text-amber-700">
                   All files in the repository will be deleted and replaced with your uploaded files.
                 </p>
               </div>
@@ -246,55 +246,55 @@ export function GitOperationsStep({
 
       {/* File Comparison Results */}
       {isComparing ? (
-        <div className="border rounded-lg p-4 border-gray-200 bg-gray-50">
+        <div className="card p-6 bg-gray-50">
           <div className="flex items-center">
             <LoadingSpinner size="sm" />
-            <span className="ml-2 text-gray-700">
+            <span className="ml-3 text-gray-700 font-medium">
               Comparing files with repository...
             </span>
           </div>
         </div>
       ) : fileComparison && (
-        <div className="border rounded-lg p-4 border-gray-200 bg-gray-50">
-          <h3 className="font-medium mb-3 text-gray-900">
+        <div className="card p-6 bg-gray-50">
+          <h3 className="font-bold mb-4 text-gray-900 text-lg">
             File Changes Summary
           </h3>
           
           {/* No Changes Detected */}
           {fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 ? (
-            <div className="text-center py-6">
-              <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-3" />
-              <h4 className="text-lg font-medium text-gray-900 mb-2">
+            <div className="text-center py-8">
+              <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
+              <h4 className="text-xl font-bold text-gray-900 mb-3">
                 No Changes Detected
               </h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 mb-6 text-lg">
                 All files are identical to the target branch. No commit is needed.
               </p>
               {fileComparison.unchangedFiles.length > 0 && (
-                <p className="text-sm text-gray-500">
+                <p className="text-gray-500 font-medium">
                   {fileComparison.unchangedFiles.length} file{fileComparison.unchangedFiles.length !== 1 ? 's' : ''} checked
                 </p>
               )}
             </div>
           ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {/* New Files */}
             {fileComparison.newFiles.length > 0 && (
               <div>
                 <button
                   onClick={() => setShowNewFiles(!showNewFiles)}
-                  className="flex items-center w-full text-left p-2 rounded hover:bg-gray-100 transition-colors text-green-600 hover:bg-gray-100"
+                  className="flex items-center w-full text-left p-3 rounded-lg hover:bg-gray-100 transition-colors text-green-600"
                 >
-                  {showNewFiles ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                  <Plus size={16} className="ml-1 mr-2" />
-                  <span className="font-medium">
+                  {showNewFiles ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                  <Plus size={18} className="ml-2 mr-3" />
+                  <span className="font-bold">
                     {fileComparison.newFiles.length} new file{fileComparison.newFiles.length !== 1 ? 's' : ''}
                   </span>
                 </button>
                 {showNewFiles && (
-                  <div className="ml-6 space-y-1">
+                  <div className="ml-8 space-y-2">
                     {fileComparison.newFiles.map((file, index) => (
-                      <div key={index} className="text-sm font-mono text-gray-700">
+                      <div key={index} className="font-mono text-gray-700">
                         + {file.path}
                       </div>
                     ))}
@@ -358,10 +358,10 @@ export function GitOperationsStep({
       )}
 
       {error && (
-        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+        <div className="alert-error">
           <div className="flex items-center">
-            <AlertTriangle className="h-5 w-5 text-gray-600" />
-            <p className="ml-2 text-sm text-gray-800">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <p className="ml-3 text-red-800 font-medium">
               {error}
             </p>
           </div>
@@ -370,18 +370,18 @@ export function GitOperationsStep({
 
       {/* Upload Progress */}
       {isUploading && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-700">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-700 font-bold text-lg">
               Uploading files...
             </span>
-            <span className="text-gray-700">
+            <span className="text-gray-700 font-bold text-lg">
               {uploadProgress}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-3">
             <div 
-              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+              className="bg-green-600 h-3 rounded-full transition-all duration-300"
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
@@ -393,23 +393,23 @@ export function GitOperationsStep({
         <button
           onClick={onBack}
           disabled={isUploading}
-          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="btn-secondary"
         >
           Back
         </button>
         <button
           onClick={handleUpload}
           disabled={isUploading || !commitMessage.trim() || (fileComparison && fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0)}
-          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-6 rounded-lg transition-colors flex items-center"
+          className="btn-primary"
         >
           {isUploading ? (
             <>
               <LoadingSpinner size="sm" />
-              <span className="ml-2">Uploading...</span>
+              <span className="ml-3">Uploading...</span>
             </>
           ) : (
             <>
-              <Send className="h-4 w-4 mr-2" />
+              <Send className="h-5 w-5 mr-3" />
               {fileComparison && fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 
                 ? 'No Changes to Push' 
                 : 'Push to Repository'}
