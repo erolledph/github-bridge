@@ -24,7 +24,7 @@ interface AppState {
 }
 
 function App() {
-  const { user, isLoading, githubToken } = useAuth();
+  const { user, isLoading, githubToken, setGitHubToken } = useAuth();
   const [state, setState] = useState<AppState>({
     currentStep: 'auth',
     selectedRepository: null,
@@ -64,6 +64,10 @@ function App() {
   }, [user, githubToken, isLoading]);
 
   const handleAuthSuccess = (token: string) => {
+    // Store the token using the auth hook
+    if (user) {
+      setGitHubToken(token);
+    }
     const githubService = new GitHubService(token);
     updateState({
       githubService,
