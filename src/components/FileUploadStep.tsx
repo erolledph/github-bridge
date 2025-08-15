@@ -101,21 +101,12 @@ export default function FileUploadStep({
             // Skip if path becomes empty after stripping root
             if (!finalPath) continue;
             
-            // Determine if file is binary based on extension
-            const isBinaryFile = /\.(png|jpe?g|gif|ico|webp|svg|bmp|tiff?|pdf|zip|rar|7z|tar|gz|exe|dll|so|dylib|app|dmg|pkg|deb|rpm|woff2?|ttf|otf|eot|mp3|mp4|avi|mov|wmv|flv|wav|ogg|webm|mkv|m4v|3gp|doc|docx|xls|xlsx|ppt|pptx|odt|ods|odp)$/i.test(finalPath);
-            
+            // Try to read as text first, fallback to binary
             let content: string | Uint8Array;
-            
-            if (isBinaryFile) {
-              // Always read binary files as Uint8Array to prevent corruption
+            try {
+              content = await zipEntry.async('string');
+            } catch {
               content = await zipEntry.async('uint8array');
-            } else {
-              // Try to read as text first, fallback to binary for non-binary files
-              try {
-                content = await zipEntry.async('string');
-              } catch {
-                content = await zipEntry.async('uint8array');
-              }
             }
             
             extractedFiles.push({

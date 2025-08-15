@@ -24,7 +24,6 @@ export const GitHubLogin: React.FC<GitHubLoginProps> = ({ onAuthSuccess }) => {
         const validation = await githubService.validateToken();
         
         if (validation.valid) {
-          // Token is valid, pass it to the parent component
           onAuthSuccess(result.token);
         } else {
           setError('GitHub authentication succeeded but token validation failed. Please try again.');
