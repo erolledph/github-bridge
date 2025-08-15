@@ -5,6 +5,7 @@ interface FileComparison {
   newFiles: FileEntry[];
   modifiedFiles: FileEntry[];
   unchangedFiles: FileEntry[];
+  deletedFiles: FileEntry[];
 }
 
 export class GitHubService {
@@ -150,6 +151,7 @@ export class GitHubService {
           newFiles: extractedFiles,
           modifiedFiles: [],
           unchangedFiles: [],
+          deletedFiles: [],
         };
       }
 
@@ -169,9 +171,13 @@ export class GitHubService {
         }
       });
 
+      // Create a set of uploaded file paths for quick lookup
+      const uploadedFilePaths = new Set(extractedFiles.map(file => file.path));
+
       const newFiles: FileEntry[] = [];
       const modifiedFiles: FileEntry[] = [];
       const unchangedFiles: FileEntry[] = [];
+      const deletedFiles: FileEntry[] = [];
 
       // Compare each extracted file
       for (const file of extractedFiles) {
@@ -192,10 +198,45 @@ export class GitHubService {
         }
       }
 
+      // Find files that exist in repository but not in uploaded files (deleted files)
+      for (const [filePath, fileSha] of existingFiles) {
+        if (!uploadedFilePaths.has(filePath)) {
+          // This file exists in repo but not in uploaded files - it's deleted
+          try {
+            // Get the file content from the repository
+            const { data: fileData } = await this.octokit.rest.repos.getContent({
+              owner,
+              repo,
+              path: filePath,
+              ref: branch,
+            });
+            
+            if ('content' in fileData && typeof fileData.content === 'string') {
+              // Decode base64 content
+              const content = atob(fileData.content);
+              deletedFiles.push({
+                path: filePath,
+                content: content,
+                isDirectory: false,
+              });
+            }
+          } catch (error) {
+            console.warn(`Failed to fetch content for deleted file ${filePath}:`, error);
+            // Add the file without content if we can't fetch it
+            deletedFiles.push({
+              path: filePath,
+              content: '',
+              isDirectory: false,
+            });
+          }
+        }
+      }
+
       return {
         newFiles,
         modifiedFiles,
         unchangedFiles,
+        deletedFiles,
       };
     } catch (error) {
       console.error('Failed to compare repository files:', error);
@@ -204,15 +245,17 @@ export class GitHubService {
         newFiles: extractedFiles,
         modifiedFiles: [],
         unchangedFiles: [],
+        deletedFiles: [],
       };
     }
   }
 
   async uploadFiles(
     repository: Repository,
-    files: FileEntry[],
+    filesToCreateOrUpdate: FileEntry[],
     commitInfo: CommitInfo,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    filesToDelete: FileEntry[] = []
   ): Promise<void> {
     try {
       const owner = repository.owner.login;
@@ -249,8 +292,8 @@ export class GitHubService {
 
       onProgress?.(20);
 
-      // Create tree entries for new files
-      const treeEntries = files
+      // Create tree entries for files to create or update
+      const createUpdateEntries = filesToCreateOrUpdate
         .filter(file => !file.isDirectory)
         .map(file => ({
           path: file.path,
@@ -264,6 +307,17 @@ export class GitHubService {
               }
           ),
         }));
+
+      // Create tree entries for files to delete (set sha to null)
+      const deleteEntries = filesToDelete.map(file => ({
+        path: file.path,
+        mode: '100644' as const,
+        type: 'blob' as const,
+        sha: null as any, // Setting sha to null marks the file for deletion
+      }));
+
+      // Combine all tree entries
+      const treeEntries = [...createUpdateEntries, ...deleteEntries];
 
       onProgress?.(40);
 

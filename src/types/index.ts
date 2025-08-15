@@ -36,4 +36,5 @@ export interface FileComparison {
   newFiles: FileEntry[];
   modifiedFiles: FileEntry[];
   unchangedFiles: FileEntry[];
+  deletedFiles: FileEntry[];
 }
