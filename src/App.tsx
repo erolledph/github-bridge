@@ -227,7 +227,7 @@ function App() {
 
         {/* Main Content */}
             <main className="card p-8 sm:p-10" role="main">
-          {!isAuthenticated && (
+          {state.currentStep === 'auth' && (
             <AuthPage
               onAuthSuccess={handleAuthSuccess}
               tokenError={state.showAuthTokenError}
