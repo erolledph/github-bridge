@@ -63,16 +63,6 @@ function App() {
     }
   }, [user, githubToken, isLoading]);
 
-  // Add debug logging to track auth state changes
-  useEffect(() => {
-    console.log('Auth state changed:', { 
-      user: user?.email || 'null', 
-      githubToken: githubToken ? 'present' : 'null',
-      isLoading,
-      currentStep: state.currentStep
-    });
-  }, [user, githubToken, isLoading, state.currentStep]);
-
   const handleAuthSuccess = (token: string) => {
     const githubService = new GitHubService(token);
     updateState({
