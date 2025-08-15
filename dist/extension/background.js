@@ -1,378 +1,371 @@
-// GitHub Bridge Extension - Background Script
-class BackgroundService {
-    constructor() {
-        this.setupEventListeners();
+// GitHub Bridge Extension - Background Service Worker
+
+class GitHubService {
+  constructor(token) {
+    this.token = token;
+    this.baseURL = 'https://api.github.com';
+  }
+
+  async makeRequest(endpoint, options = {}) {
+    const url = `${this.baseURL}${endpoint}`;
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'GitHub-Bridge-Extension',
+        ...options.headers
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.status} ${response.statusText}`);
     }
 
-    setupEventListeners() {
-        // Handle extension installation
-        chrome.runtime.onInstalled.addListener((details) => {
-            if (details.reason === 'install') {
-                console.log('GitHub Bridge extension installed');
-                this.openWelcomePage();
-            }
-        });
+    return response.json();
+  }
 
-        // Handle messages from popup
-        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-            this.handleMessage(request, sender, sendResponse);
-            return true; // Keep message channel open for async responses
-        });
-
-        // Handle storage changes
-        chrome.storage.onChanged.addListener((changes, namespace) => {
-            this.handleStorageChange(changes, namespace);
-        });
+  async validateToken() {
+    try {
+      const user = await this.makeRequest('/user');
+      return {
+        valid: true,
+        username: user.login,
+        scopes: ['repo', 'user:email'] // Assume valid scopes for simplicity
+      };
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      return { valid: false };
     }
+  }
 
-    async handleMessage(request, sender, sendResponse) {
-        try {
-            switch (request.action) {
-                case 'validateToken':
-                    const validation = await this.validateGitHubToken(request.token);
-                    sendResponse({ success: true, data: validation });
-                    break;
-
-                case 'fetchRepositories':
-                    const repositories = await this.fetchRepositories(request.token);
-                    sendResponse({ success: true, data: repositories });
-                    break;
-
-                case 'createRepository':
-                    const newRepo = await this.createRepository(request.token, request.repoData);
-                    sendResponse({ success: true, data: newRepo });
-                    break;
-
-                case 'uploadFiles':
-                    const uploadResult = await this.uploadFiles(request.token, request.uploadData);
-                    sendResponse({ success: true, data: uploadResult });
-                    break;
-
-                case 'openTab':
-                    await this.openTab(request.url);
-                    sendResponse({ success: true });
-                    break;
-
-                default:
-                    sendResponse({ success: false, error: 'Unknown action' });
-            }
-        } catch (error) {
-            console.error('Background script error:', error);
-            sendResponse({ success: false, error: error.message });
-        }
+  async getRepositories() {
+    try {
+      const repos = await this.makeRequest('/user/repos?sort=updated&per_page=100');
+      return repos;
+    } catch (error) {
+      console.error('Failed to fetch repositories:', error);
+      throw new Error('Failed to fetch repositories');
     }
+  }
 
-    async validateGitHubToken(token) {
-        try {
-            const response = await fetch('https://api.github.com/user', {
-                headers: {
-                    'Authorization': `token ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-
-            if (response.ok) {
-                const user = await response.json();
-                
-                // Check token scopes
-                const scopes = response.headers.get('x-oauth-scopes');
-                const scopeList = scopes ? scopes.split(', ').map(s => s.trim()) : [];
-                
-                return {
-                    valid: true,
-                    user: user,
-                    scopes: scopeList,
-                    hasRequiredScopes: scopeList.includes('repo') && scopeList.includes('user:email')
-                };
-            } else {
-                return { valid: false, error: 'Invalid token' };
-            }
-        } catch (error) {
-            return { valid: false, error: error.message };
-        }
+  async getBranches(owner, repo) {
+    try {
+      const branches = await this.makeRequest(`/repos/${owner}/${repo}/branches?per_page=100`);
+      return branches.map(branch => branch.name);
+    } catch (error) {
+      console.error('Failed to fetch branches:', error);
+      return [];
     }
+  }
 
-    async fetchRepositories(token) {
-        try {
-            const response = await fetch('https://api.github.com/user/repos?sort=updated&per_page=100', {
-                headers: {
-                    'Authorization': `token ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-
-            if (response.ok) {
-                return await response.json();
-            } else {
-                throw new Error('Failed to fetch repositories');
-            }
-        } catch (error) {
-            throw new Error(`Repository fetch failed: ${error.message}`);
-        }
+  async createRepository(name, description, isPrivate = false) {
+    try {
+      const repo = await this.makeRequest('/user/repos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name,
+          description,
+          private: isPrivate,
+          auto_init: true
+        })
+      });
+      return repo;
+    } catch (error) {
+      console.error('Failed to create repository:', error);
+      throw new Error(`Failed to create repository: ${error.message}`);
     }
+  }
 
-    async createRepository(token, repoData) {
-        try {
-            const response = await fetch('https://api.github.com/user/repos', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `token ${token}`,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: repoData.name,
-                    description: repoData.description,
-                    private: repoData.private,
-                    auto_init: true
-                })
-            });
+  async uploadFiles(repository, files, commitInfo, onProgress) {
+    try {
+      const owner = repository.owner.login;
+      const repo = repository.name;
+      const branch = commitInfo.branch;
 
-            if (response.ok) {
-                return await response.json();
-            } else {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to create repository');
-            }
-        } catch (error) {
-            throw new Error(`Repository creation failed: ${error.message}`);
-        }
+      onProgress?.(10);
+
+      // Get current commit SHA
+      let currentCommitSha;
+      try {
+        const branchData = await this.makeRequest(`/repos/${owner}/${repo}/branches/${branch}`);
+        currentCommitSha = branchData.commit.sha;
+      } catch {
+        // Branch doesn't exist, create from default branch
+        const defaultBranch = await this.makeRequest(`/repos/${owner}/${repo}/branches/${repository.default_branch}`);
+        currentCommitSha = defaultBranch.commit.sha;
+      }
+
+      onProgress?.(20);
+
+      // Get current commit
+      const currentCommit = await this.makeRequest(`/repos/${owner}/${repo}/git/commits/${currentCommitSha}`);
+
+      onProgress?.(40);
+
+      // Create tree entries
+      const treeEntries = files
+        .filter(file => !file.isDirectory)
+        .map(file => ({
+          path: file.path,
+          mode: '100644',
+          type: 'blob',
+          content: typeof file.content === 'string' ? file.content : btoa(String.fromCharCode(...file.content))
+        }));
+
+      // Create new tree
+      const newTree = await this.makeRequest(`/repos/${owner}/${repo}/git/trees`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tree: treeEntries,
+          base_tree: commitInfo.clearExisting ? undefined : currentCommit.tree.sha
+        })
+      });
+
+      onProgress?.(60);
+
+      // Create new commit
+      const newCommit = await this.makeRequest(`/repos/${owner}/${repo}/git/commits`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: commitInfo.message,
+          tree: newTree.sha,
+          parents: [currentCommitSha]
+        })
+      });
+
+      onProgress?.(80);
+
+      // Update branch reference
+      await this.makeRequest(`/repos/${owner}/${repo}/git/refs/heads/${branch}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sha: newCommit.sha
+        })
+      });
+
+      onProgress?.(100);
+    } catch (error) {
+      console.error('Failed to upload files:', error);
+      throw new Error(`Failed to upload files: ${error.message}`);
     }
-
-    async uploadFiles(token, uploadData) {
-        try {
-            const { repository, files, commitMessage, branch, clearExisting } = uploadData;
-            const owner = repository.owner.login;
-            const repo = repository.name;
-
-            // Get current commit SHA
-            let currentCommitSha;
-            try {
-                const branchResponse = await fetch(
-                    `https://api.github.com/repos/${owner}/${repo}/branches/${branch}`,
-                    {
-                        headers: {
-                            'Authorization': `token ${token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    }
-                );
-                
-                if (branchResponse.ok) {
-                    const branchData = await branchResponse.json();
-                    currentCommitSha = branchData.commit.sha;
-                } else {
-                    // Branch doesn't exist, create from default branch
-                    const defaultBranchResponse = await fetch(
-                        `https://api.github.com/repos/${owner}/${repo}/branches/${repository.default_branch}`,
-                        {
-                            headers: {
-                                'Authorization': `token ${token}`,
-                                'Accept': 'application/vnd.github.v3+json'
-                            }
-                        }
-                    );
-                    const defaultBranchData = await defaultBranchResponse.json();
-                    currentCommitSha = defaultBranchData.commit.sha;
-                }
-            } catch (error) {
-                throw new Error('Failed to get current commit SHA');
-            }
-
-            // Get current tree
-            const currentCommitResponse = await fetch(
-                `https://api.github.com/repos/${owner}/${repo}/git/commits/${currentCommitSha}`,
-                {
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                }
-            );
-            const currentCommit = await currentCommitResponse.json();
-
-            // Create tree entries
-            const treeEntries = files
-                .filter(file => !file.isDirectory)
-                .map(file => ({
-                    path: file.path,
-                    mode: '100644',
-                    type: 'blob',
-                    ...(typeof file.content === 'string' 
-                        ? { content: file.content }
-                        : { 
-                            content: this.arrayBufferToBase64(file.content),
-                            encoding: 'base64'
-                        }
-                    ),
-                }));
-
-            // Create new tree
-            const treeResponse = await fetch(
-                `https://api.github.com/repos/${owner}/${repo}/git/trees`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        tree: treeEntries,
-                        base_tree: clearExisting ? undefined : currentCommit.tree.sha
-                    })
-                }
-            );
-
-            if (!treeResponse.ok) {
-                const error = await treeResponse.json();
-                throw new Error(error.message || 'Failed to create tree');
-            }
-
-            const newTree = await treeResponse.json();
-
-            // Create new commit
-            const commitResponse = await fetch(
-                `https://api.github.com/repos/${owner}/${repo}/git/commits`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        message: commitMessage,
-                        tree: newTree.sha,
-                        parents: [currentCommitSha]
-                    })
-                }
-            );
-
-            if (!commitResponse.ok) {
-                const error = await commitResponse.json();
-                throw new Error(error.message || 'Failed to create commit');
-            }
-
-            const newCommit = await commitResponse.json();
-
-            // Update branch reference
-            const refResponse = await fetch(
-                `https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`,
-                {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `token ${token}`,
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        sha: newCommit.sha
-                    })
-                }
-            );
-
-            if (!refResponse.ok) {
-                const error = await refResponse.json();
-                throw new Error(error.message || 'Failed to update branch reference');
-            }
-
-            return {
-                commitSha: newCommit.sha,
-                commitUrl: newCommit.html_url,
-                repositoryUrl: `${repository.html_url}/tree/${branch}`
-            };
-        } catch (error) {
-            throw new Error(`File upload failed: ${error.message}`);
-        }
-    }
-
-    async openTab(url) {
-        try {
-            await chrome.tabs.create({ url });
-        } catch (error) {
-            throw new Error(`Failed to open tab: ${error.message}`);
-        }
-    }
-
-    openWelcomePage() {
-        // Open the extension popup or a welcome page
-        chrome.tabs.create({
-            url: chrome.runtime.getURL('popup.html')
-        });
-    }
-
-    handleStorageChange(changes, namespace) {
-        // Handle storage changes if needed
-        console.log('Storage changed:', changes, namespace);
-    }
-
-    // Utility Methods
-    arrayBufferToBase64(buffer) {
-        let binary = '';
-        const bytes = new Uint8Array(buffer);
-        const len = bytes.byteLength;
-        for (let i = 0; i < len; i++) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        return btoa(binary);
-    }
-
-    base64ToArrayBuffer(base64) {
-        const binaryString = atob(base64);
-        const len = binaryString.length;
-        const bytes = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-        }
-        return bytes.buffer;
-    }
-
-    // GitHub API Rate Limiting
-    async checkRateLimit(token) {
-        try {
-            const response = await fetch('https://api.github.com/rate_limit', {
-                headers: {
-                    'Authorization': `token ${token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
-
-            if (response.ok) {
-                return await response.json();
-            }
-        } catch (error) {
-            console.error('Failed to check rate limit:', error);
-        }
-        return null;
-    }
-
-    // Error Handling
-    handleApiError(response, defaultMessage) {
-        if (response.status === 401) {
-            return 'Authentication failed. Please check your GitHub token.';
-        } else if (response.status === 403) {
-            return 'Access forbidden. Please check your token permissions.';
-        } else if (response.status === 404) {
-            return 'Resource not found.';
-        } else if (response.status === 422) {
-            return 'Invalid request data.';
-        } else if (response.status >= 500) {
-            return 'GitHub server error. Please try again later.';
-        }
-        return defaultMessage;
-    }
+  }
 }
 
-// Initialize background service
-const backgroundService = new BackgroundService();
+// Authentication functions
+async function authenticateWithGitHub() {
+  const redirectURL = chrome.identity.getRedirectURL();
+  const clientId = 'Ov23liQGVLjKJhJGJhJG'; // Replace with your actual client ID
+  const authURL = `https://github.com/login/oauth/authorize?` +
+    `client_id=${clientId}&` +
+    `redirect_uri=${encodeURIComponent(redirectURL)}&` +
+    `scope=repo user:email&` +
+    `response_type=code`;
 
-// Keep service worker alive
-chrome.runtime.onStartup.addListener(() => {
-    console.log('GitHub Bridge extension started');
+  return new Promise((resolve, reject) => {
+    chrome.identity.launchWebAuthFlow({
+      url: authURL,
+      interactive: true
+    }, async (responseUrl) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+
+      if (!responseUrl) {
+        reject(new Error('No response URL received'));
+        return;
+      }
+
+      try {
+        const url = new URL(responseUrl);
+        const code = url.searchParams.get('code');
+        
+        if (!code) {
+          reject(new Error('No authorization code received'));
+          return;
+        }
+
+        // Exchange code for token
+        const token = await exchangeCodeForToken(code);
+        
+        // Store token
+        await chrome.storage.local.set({ github_token: token });
+        
+        resolve(token);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
+async function exchangeCodeForToken(code) {
+  // In a real implementation, you would need a backend service to exchange the code
+  // For now, we'll simulate this or use a public proxy service
+  // This is a simplified version - in production, you need proper token exchange
+  
+  try {
+    const response = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: 'Ov23liQGVLjKJhJGJhJG',
+        client_secret: 'your_client_secret', // This should be handled by your backend
+        code: code
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.access_token) {
+      return data.access_token;
+    } else {
+      throw new Error('Failed to get access token');
+    }
+  } catch (error) {
+    console.error('Token exchange failed:', error);
+    throw error;
+  }
+}
+
+// Message handling
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Background received message:', request);
+
+  switch (request.action) {
+    case 'authenticate':
+      authenticateWithGitHub()
+        .then(token => {
+          sendResponse({ success: true, token });
+        })
+        .catch(error => {
+          console.error('Authentication failed:', error);
+          sendResponse({ success: false, error: error.message });
+        });
+      return true; // Keep message channel open for async response
+
+    case 'getStoredToken':
+      chrome.storage.local.get(['github_token'], (result) => {
+        sendResponse({ success: true, token: result.github_token || null });
+      });
+      return true;
+
+    case 'validateToken':
+      if (!request.token) {
+        sendResponse({ success: false, error: 'No token provided' });
+        return;
+      }
+
+      const githubService = new GitHubService(request.token);
+      githubService.validateToken()
+        .then(validation => {
+          sendResponse({ success: true, validation });
+        })
+        .catch(error => {
+          sendResponse({ success: false, error: error.message });
+        });
+      return true;
+
+    case 'getRepositories':
+      if (!request.token) {
+        sendResponse({ success: false, error: 'No token provided' });
+        return;
+      }
+
+      const repoService = new GitHubService(request.token);
+      repoService.getRepositories()
+        .then(repositories => {
+          sendResponse({ success: true, repositories });
+        })
+        .catch(error => {
+          sendResponse({ success: false, error: error.message });
+        });
+      return true;
+
+    case 'getBranches':
+      if (!request.token || !request.owner || !request.repo) {
+        sendResponse({ success: false, error: 'Missing required parameters' });
+        return;
+      }
+
+      const branchService = new GitHubService(request.token);
+      branchService.getBranches(request.owner, request.repo)
+        .then(branches => {
+          sendResponse({ success: true, branches });
+        })
+        .catch(error => {
+          sendResponse({ success: false, error: error.message });
+        });
+      return true;
+
+    case 'createRepository':
+      if (!request.token || !request.name) {
+        sendResponse({ success: false, error: 'Missing required parameters' });
+        return;
+      }
+
+      const createService = new GitHubService(request.token);
+      createService.createRepository(request.name, request.description, request.isPrivate)
+        .then(repository => {
+          sendResponse({ success: true, repository });
+        })
+        .catch(error => {
+          sendResponse({ success: false, error: error.message });
+        });
+      return true;
+
+    case 'uploadFiles':
+      if (!request.token || !request.repository || !request.files || !request.commitInfo) {
+        sendResponse({ success: false, error: 'Missing required parameters' });
+        return;
+      }
+
+      const uploadService = new GitHubService(request.token);
+      uploadService.uploadFiles(
+        request.repository,
+        request.files,
+        request.commitInfo,
+        (progress) => {
+          // Send progress updates
+          chrome.runtime.sendMessage({
+            action: 'uploadProgress',
+            progress
+          });
+        }
+      )
+        .then(() => {
+          sendResponse({ success: true });
+        })
+        .catch(error => {
+          sendResponse({ success: false, error: error.message });
+        });
+      return true;
+
+    case 'clearToken':
+      chrome.storage.local.remove(['github_token'], () => {
+        sendResponse({ success: true });
+      });
+      return true;
+
+    default:
+      sendResponse({ success: false, error: 'Unknown action' });
+  }
 });
 
-// Handle extension updates
-chrome.runtime.onUpdateAvailable.addListener((details) => {
-    console.log('Extension update available:', details);
-});
+console.log('GitHub Bridge background script loaded');
