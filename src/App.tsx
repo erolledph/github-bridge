@@ -21,6 +21,7 @@ interface AppState {
   selectedRepository: Repository | null;
   uploadedFile: UploadedFile | null;
   githubService: GitHubService | null;
+  showAuthTokenError: boolean;
 }
 
 function App() {
@@ -30,44 +31,75 @@ function App() {
     selectedRepository: null,
     uploadedFile: null,
     githubService: null,
+    showAuthTokenError: false,
   });
 
   const updateState = (updates: Partial<AppState>) => {
     setState(prev => ({ ...prev, ...updates }));
   };
 
-  // Centralized GitHub service initialization based on auth state
+  // Centralized GitHub service initialization and token validation based on auth state
   useEffect(() => {
     // Only proceed once auth state is fully determined
     if (isLoading) return;
 
-    if (user && githubToken) {
-      // User is authenticated and has GitHub token - create service and go to repository step
-      const githubService = new GitHubService(githubToken);
-      updateState({
-        githubService,
-        currentStep: 'repository'
-      });
-    } else if (user && !githubToken) {
-      // User is authenticated but no GitHub token - go back to auth step
-      updateState({
-        githubService: null,
-        currentStep: 'auth'
-      });
-    } else {
-      // User is not authenticated - ensure we're on auth step
-      updateState({
-        githubService: null,
-        currentStep: 'auth'
-      });
-    }
+    const validateAndSetupGitHubService = async () => {
+      if (user && githubToken) {
+        // User is authenticated and has GitHub token - validate it
+        try {
+          const githubService = new GitHubService(githubToken);
+          const validation = await githubService.validateToken();
+          
+          if (validation.valid && validation.username) {
+            // Token is valid - proceed to repository step
+            updateState({
+              githubService,
+              currentStep: 'repository',
+              showAuthTokenError: false
+            });
+          } else {
+            // Token is invalid - show error and stay on auth page
+            updateState({
+              githubService: null,
+              currentStep: 'auth',
+              showAuthTokenError: true
+            });
+          }
+        } catch (error) {
+          console.error('Token validation failed on refresh:', error);
+          // Token validation failed - show error and stay on auth page
+          updateState({
+            githubService: null,
+            currentStep: 'auth',
+            showAuthTokenError: true
+          });
+        }
+      } else if (user && !githubToken) {
+        // User is authenticated but no GitHub token - show error
+        updateState({
+          githubService: null,
+          currentStep: 'auth',
+          showAuthTokenError: true
+        });
+      } else {
+        // User is not authenticated - normal auth state
+        updateState({
+          githubService: null,
+          currentStep: 'auth',
+          showAuthTokenError: false
+        });
+      }
+    };
+
+    validateAndSetupGitHubService();
   }, [user, githubToken, isLoading]);
 
   const handleAuthSuccess = (token: string) => {
     const githubService = new GitHubService(token);
     updateState({
       githubService,
-      currentStep: 'repository'
+      currentStep: 'repository',
+      showAuthTokenError: false
     });
   };
 
@@ -198,6 +230,7 @@ function App() {
           {!isAuthenticated && (
             <AuthPage
               onAuthSuccess={handleAuthSuccess}
+              tokenError={state.showAuthTokenError}
             />
           )}
 
