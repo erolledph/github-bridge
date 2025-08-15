@@ -61,8 +61,17 @@ export const signOutUser = async () => {
   try {
     await signOut(auth);
   } catch (error) {
-    console.error('Sign-out error:', error);
-    throw error;
+    // Don't throw error if user is already signed out
+    if (error && typeof error === 'object' && 'code' in error) {
+      const firebaseError = error as any;
+      if (firebaseError.code !== 'auth/no-current-user') {
+        console.error('Sign-out error:', error);
+        throw error;
+      }
+    } else {
+      console.error('Sign-out error:', error);
+      throw error;
+    }
   }
 };
 
