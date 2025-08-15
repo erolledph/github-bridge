@@ -16,10 +16,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess, tokenError = 
             <AlertTriangle className="h-6 w-6 text-red-600" />
             <div className="ml-3">
               <p className="text-red-800 font-medium">
-                GitHub Token Validation Failed
+                GitHub Token Validation Failed or Expired
               </p>
               <p className="text-red-700 mt-1">
-                Your GitHub token could not be validated. This may happen if the token has expired, been revoked, or lost required permissions. Please sign in again to refresh your authentication.
+                Your GitHub token could not be validated. This may happen if the token has expired, been revoked, or lost required permissions. Please logout and login again to refresh your authentication.
               </p>
             </div>
           </div>
