@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, FileText, Github, CloudLightning, Heart } from 'lucide-react';
+import { Shield, FileText, Github, CloudLightning, Puzzle, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -107,7 +107,7 @@ export const Footer: React.FC = () => {
                   rel="noopener noreferrer" 
                   className="text-gray-600 hover:text-green-600 transition-colors flex items-center font-medium"
                 >
-                  <Github size={16} className="mr-3" />
+                  <Puzzle size={16} className="mr-3" />
                   Browser Extension
                 </a>
               </li>
