@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, FileText, Github, Heart } from 'lucide-react';
+import { Shield, FileText, Github, CloudLightning, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -94,9 +94,21 @@ export const Footer: React.FC = () => {
                   href="https://bolt.new/?rid=oh23xs" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-gray-600 hover:text-green-600 transition-colors font-medium"
+                 className="text-gray-600 hover:text-green-600 transition-colors flex items-center font-medium"
                 >
-                  Bolt.new Platform
+                  <CloudLightning size={16} className="mr-3" />
+                  Bolt.new
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="https://github.com/erolledph/github-bridge-extension" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-gray-600 hover:text-green-600 transition-colors flex items-center font-medium"
+                >
+                  <Github size={16} className="mr-3" />
+                  Browser Extension
                 </a>
               </li>
             </ul>
