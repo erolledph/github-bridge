@@ -9,13 +9,13 @@ import {
 } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCQRb3HZoIm1pY0t2y0fkQlT7S8O73qFug",
-  authDomain: "github-bridge-bolt.firebaseapp.com",
-  projectId: "github-bridge-bolt",
-  storageBucket: "github-bridge-bolt.firebasestorage.app",
-  messagingSenderId: "1021410050918",
-  appId: "1:1021410050918:web:0ee2d32b8f7a71fba8bea7",
-  measurementId: "G-L9D6L1MBLJ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
