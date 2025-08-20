@@ -81,3 +81,6 @@
 .github-logo {
   fill: #16a34a;
 }
+button.btn-secondary.mt-4 {
+  display: none;
+}
