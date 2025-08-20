@@ -37,6 +37,7 @@ export function GitOperationsStep({
   const [showDeletedFiles, setShowDeletedFiles] = useState(false);
   const [selectedFilePaths, setSelectedFilePaths] = useState<Set<string>>(new Set());
   const [selectedDeletedFiles, setSelectedDeletedFiles] = useState<Set<string>>(new Set());
+  const [showRefreshButtons, setShowRefreshButtons] = useState(false); // New state to control refresh button visibility
 
   // Add state for tracking comparison attempts and retries
   const [comparisonAttempts, setComparisonAttempts] = useState(0);
@@ -461,14 +462,16 @@ export function GitOperationsStep({
               <p className="text-gray-600 mb-6 text-lg">
                 No files were extracted from the uploaded ZIP file.
               </p>
-              <button
-                onClick={handleRefreshComparison}
-                disabled={isComparing || isUploading}
-                className="btn-secondary"
-              >
-                <RefreshCw size={16} className="mr-2" />
-                Retry Comparison
-              </button>
+              {showRefreshButtons && (
+                <button
+                  onClick={handleRefreshComparison}
+                  disabled={isComparing || isUploading}
+                  className="btn-secondary"
+                >
+                  <RefreshCw size={16} className="mr-2" />
+                  Retry Comparison
+                </button>
+              )}
             </div>
           ) : fileComparison.newFiles.length === 0 && fileComparison.modifiedFiles.length === 0 && fileComparison.deletedFiles.length === 0 ? (
             <div className="text-center py-8">
@@ -487,14 +490,16 @@ export function GitOperationsStep({
                   <p className="text-sm text-gray-500">
                     You can still select unchanged files to include in the commit if needed.
                   </p>
-                  <button
-                    onClick={handleRefreshComparison}
-                    disabled={isComparing || isUploading}
-                    className="btn-secondary mt-4"
-                  >
-                    <RefreshCw size={16} className="mr-2" />
-                    Refresh Comparison
-                  </button>
+                  {showRefreshButtons && (
+                    <button
+                      onClick={handleHandlerefreshComparison}
+                      disabled={isComparing || isUploading}
+                      className="btn-secondary mt-4"
+                    >
+                      <RefreshCw size={16} className="mr-2" />
+                      Refresh Comparison
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -531,7 +536,9 @@ export function GitOperationsStep({
                   </div>
                 </div>
                 {showNewFiles && (
-                  <div className="ml-8 space-y-3">
+                  <div
+
+ className="ml-8 space-y-3">
                     {fileComparison.newFiles.map((file, index) => (
                       <div key={index} className="flex items-center space-x-3">
                         <input
