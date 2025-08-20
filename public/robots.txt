@@ -1,0 +1,4 @@
+User-agent: *
++Allow: /
++
+Sitemap: https://github-bridge.netlify.app/sitemap.xml
