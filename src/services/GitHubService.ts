@@ -20,6 +20,14 @@ export class GitHubService {
     });
   }
 
+  private isBinaryImage(filePath: string): boolean {
+    const binaryImageExtensions = [
+      '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.ico', '.tiff', '.tif'
+    ];
+    const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
+    return binaryImageExtensions.includes(extension);
+  }
+
   async validateToken(): Promise<{ valid: boolean; username?: string; scopes?: string[] }> {
     try {
       const { data: user } = await this.octokit.rest.users.getAuthenticated();
@@ -187,6 +195,13 @@ export class GitHubService {
           // File doesn't exist in repository
           newFiles.push(file);
         } else {
+          // Check if this is a binary image
+          if (this.isBinaryImage(file.path)) {
+            console.log(`File ${file.path} is a binary image, skipping content comparison and marking as unchanged`);
+            unchangedFiles.push(file);
+            continue;
+          }
+          
           // File exists, compare content
           const fileSha = await this.calculateSha1(file.content);
           
