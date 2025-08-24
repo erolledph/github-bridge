@@ -447,7 +447,7 @@ export function GitOperationsStep({
               type="checkbox"
               checked={clearExisting}
               onChange={(e) => setClearExisting(e.target.checked)}
-              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+              className="rounded border-gray-300 text-green-600 focus:ring-green-500 pointer-events-none"
               disabled={isUploading}
             />
             <label htmlFor="clearExisting" className="text-gray-700 font-medium">
