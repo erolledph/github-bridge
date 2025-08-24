@@ -1,4 +1,4 @@
-# GitHub Bridge
+# GitHub Bridge.
 
 A secure, client-side web application that allows developers to seamlessly upload their Bolt.new projects directly to GitHub repositories.
 
