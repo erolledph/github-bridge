@@ -441,7 +441,7 @@ export function GitOperationsStep({
             </div>
           </div>
 
-          <div className="flex items-center space-x-3 pt-8 sm:pt-12">
+          <div className="flex items-center space-x-3 pt-8 sm:pt-12 opacity-0 cursor-default ">
             <input
               id="clearExisting"
               type="checkbox"
