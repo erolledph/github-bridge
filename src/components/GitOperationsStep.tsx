@@ -440,8 +440,8 @@ export function GitOperationsStep({
               </button>
             </div>
           </div>
-{/*
-          <div className="flex items-center space-x-3 pt-8 sm:pt-12 opacity-0 cursor-default ">
+
+          <div className="flex items-center space-x-3 pt-8 sm:pt-12 opacity-0 cursor-default pointer-events-none">
             <input
               id="clearExisting"
               type="checkbox"
@@ -451,11 +451,11 @@ export function GitOperationsStep({
               disabled={isUploading}
             />
             <label htmlFor="clearExisting" className="text-gray-700 font-medium">
-              Clear existing files
+              {/* Clear existing file */}
             </label>
           </div>
         </div>
-*/}
+
         {/* Create Branch Form */}
         {showCreateBranchForm && (
           <div className="border rounded-xl p-6 border-gray-200 bg-gray-50">
