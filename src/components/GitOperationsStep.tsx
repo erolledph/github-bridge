@@ -37,7 +37,11 @@ export function GitOperationsStep({
   const [showDeletedFiles, setShowDeletedFiles] = useState(false);
   const [selectedFilePaths, setSelectedFilePaths] = useState<Set<string>>(new Set());
   const [selectedDeletedFiles, setSelectedDeletedFiles] = useState<Set<string>>(new Set());
-  const [showRefreshButtons, setShowRefreshButtons] = useState(false); // New state to control refresh button visibility
+  const [showRefreshButtons, setShowRefreshButtons] = useState(false);
+  const [showCreateBranchForm, setShowCreateBranchForm] = useState(false);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [isCreatingBranch, setIsCreatingBranch] = useState(false);
+  const [createBranchError, setCreateBranchError] = useState<string | null>(null);
 
   // Add state for tracking comparison attempts and retries
   const [comparisonAttempts, setComparisonAttempts] = useState(0);
@@ -165,6 +169,57 @@ export function GitOperationsStep({
 
   const handleBranchChange = (newBranch: string) => {
     setSelectedBranch(newBranch);
+  };
+
+  const handleCreateBranch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBranchName.trim()) return;
+
+    // Validate branch name
+    const branchName = newBranchName.trim();
+    if (!/^[a-zA-Z0-9._/-]+$/.test(branchName)) {
+      setCreateBranchError('Branch name can only contain letters, numbers, dots, hyphens, slashes, and underscores');
+      return;
+    }
+
+    if (branches.includes(branchName)) {
+      setCreateBranchError('A branch with this name already exists');
+      return;
+    }
+
+    setIsCreatingBranch(true);
+    setCreateBranchError(null);
+    
+    try {
+      await githubService.createBranch(
+        repository.owner.login,
+        repository.name,
+        branchName,
+        selectedBranch // Create from currently selected branch
+      );
+      
+      // Add the new branch to the list and select it
+      setBranches(prev => [...prev, branchName]);
+      setSelectedBranch(branchName);
+      setNewBranchName('');
+      setShowCreateBranchForm(false);
+      
+      // Reset comparison state since we're switching to a new branch
+      setFileComparison(null);
+      setSelectedFilePaths(new Set());
+      setSelectedDeletedFiles(new Set());
+      setComparisonAttempts(0);
+      setLastComparisonTime(null);
+      
+      // Compare files for the new branch
+      compareFiles();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create branch';
+      console.error('Branch creation error:', err);
+      setCreateBranchError(errorMessage);
+    } finally {
+      setIsCreatingBranch(false);
+    }
   };
 
   const handleFileSelectionChange = (filePath: string, isSelected: boolean) => {
@@ -361,17 +416,29 @@ export function GitOperationsStep({
             <label className="block font-bold mb-3 text-gray-700 text-lg">
               Target Branch
             </label>
-            <select
-              value={selectedBranch}
-              onChange={(e) => handleBranchChange(e.target.value)}
-              className="input-field"
-            >
-              {branches.map((branch) => (
-                <option key={branch} value={branch}>
-                  {branch}
-                </option>
-              ))}
-            </select>
+            <div className="flex gap-3">
+              <select
+                value={selectedBranch}
+                onChange={(e) => handleBranchChange(e.target.value)}
+                className="input-field flex-1"
+                disabled={isCreatingBranch}
+              >
+                {branches.map((branch) => (
+                  <option key={branch} value={branch}>
+                    {branch}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setShowCreateBranchForm(!showCreateBranchForm)}
+                disabled={isCreatingBranch || isUploading}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium px-4 py-3 rounded-xl transition-colors flex items-center whitespace-nowrap"
+              >
+                <Plus size={16} className="mr-2" />
+                New Branch
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center space-x-3 pt-8 sm:pt-12">
@@ -388,6 +455,74 @@ export function GitOperationsStep({
             </label>
           </div>
         </div>
+
+        {/* Create Branch Form */}
+        {showCreateBranchForm && (
+          <div className="border rounded-xl p-6 border-gray-200 bg-gray-50">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">
+              Create New Branch
+            </h3>
+            <form onSubmit={handleCreateBranch} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">
+                  Branch Name *
+                </label>
+                <input
+                  type="text"
+                  value={newBranchName}
+                  onChange={(e) => setNewBranchName(e.target.value)}
+                  placeholder="feature/new-feature"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 transition-colors bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                  required
+                  disabled={isCreatingBranch}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Branch will be created from: <strong>{selectedBranch}</strong>
+                </p>
+              </div>
+              
+              {createBranchError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="flex items-center">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <p className="ml-2 text-sm text-red-800">
+                      {createBranchError}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreateBranchForm(false);
+                    setNewBranchName('');
+                    setCreateBranchError(null);
+                  }}
+                  disabled={isCreatingBranch}
+                  className="px-4 py-2 border rounded-lg transition-colors border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newBranchName.trim() || isCreatingBranch}
+                  className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center"
+                >
+                  {isCreatingBranch ? (
+                    <>
+                      <LoadingSpinner size="sm" />
+                      <span className="ml-2">Creating...</span>
+                    </>
+                  ) : (
+                    'Create Branch'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {clearExisting && (
           <div className="alert-warning">

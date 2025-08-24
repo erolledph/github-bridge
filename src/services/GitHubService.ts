@@ -265,6 +265,50 @@ export class GitHubService {
     }
   }
 
+  async createBranch(owner: string, repo: string, branchName: string, fromBranch: string): Promise<void> {
+    try {
+      // Get the SHA of the branch we're creating from
+      const { data: fromBranchData } = await this.octokit.rest.repos.getBranch({
+        owner,
+        repo,
+        branch: fromBranch,
+      });
+
+      // Create the new branch reference
+      await this.octokit.rest.git.createRef({
+        owner,
+        repo,
+        ref: `refs/heads/${branchName}`,
+        sha: fromBranchData.commit.sha,
+      });
+    } catch (error) {
+      console.error('Failed to create branch:', error);
+      
+      // Handle specific GitHub API errors
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = error as any;
+        if (apiError.response?.status === 422) {
+          const errorData = apiError.response.data;
+          if (errorData?.message?.includes('already exists')) {
+            throw new Error('A branch with this name already exists');
+          } else if (errorData?.message) {
+            throw new Error(errorData.message);
+          } else {
+            throw new Error('Branch name is invalid or already exists');
+          }
+        } else if (apiError.response?.status === 401) {
+          throw new Error('Authentication failed. Please check your token permissions.');
+        } else if (apiError.response?.status === 403) {
+          throw new Error('Insufficient permissions. Make sure your token has repo scope.');
+        } else if (apiError.response?.status === 404) {
+          throw new Error('Repository or source branch not found.');
+        }
+      }
+      
+      throw new Error(`Failed to create branch: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   async uploadFiles(
     repository: Repository,
     filesToCreateOrUpdate: FileEntry[],
