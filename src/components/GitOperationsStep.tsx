@@ -440,7 +440,7 @@ export function GitOperationsStep({
               </button>
             </div>
           </div>
-
+{/*
           <div className="flex items-center space-x-3 pt-8 sm:pt-12 opacity-0 cursor-default ">
             <input
               id="clearExisting"
@@ -455,7 +455,7 @@ export function GitOperationsStep({
             </label>
           </div>
         </div>
-
+*/}
         {/* Create Branch Form */}
         {showCreateBranchForm && (
           <div className="border rounded-xl p-6 border-gray-200 bg-gray-50">
